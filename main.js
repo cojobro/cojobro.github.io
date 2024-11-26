@@ -89,9 +89,10 @@ function moveCamera() {
     e.rotateY(.01);
   });
 
-  camera.position.z = t * 0.028 + 100;
-  camera.position.x = t * 0.0002 - 25;
-  camera.position.y = t * 0.00575 + 30;
+  camera.position.z = t * 0.018 + 70;
+  camera.position.x = t * 0.0002 - 15
+  ;
+  camera.position.y = t * 0.00575 + 25;
   camera.rotation.y = t * 0.0004;
   camera.rotation.z = t * 0.0004;
   camera.rotation.x = t * 0.0003;
@@ -102,7 +103,7 @@ moveCamera();
 
 function animate() {
   requestAnimationFrame( animate );
-
+  
   torus.rotateX(0.003);
   torus.rotateY(0.0006)
   
@@ -116,5 +117,6 @@ function animate() {
   //controls.update()
   renderer.render( scene, camera );
 }
+
 
 animate()
