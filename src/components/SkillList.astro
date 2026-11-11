@@ -1,0 +1,79 @@
+---
+/** Skills in labelled groups, each group's items as a dotted run of text. */
+import type { SkillGroup } from '@/data/types';
+
+interface Props {
+  groups: SkillGroup[];
+}
+
+const { groups } = Astro.props;
+---
+
+<dl class="skills">
+  {groups.map(({ label, items }) => (
+    <div class="group">
+      <dt class="kicker">{label}</dt>
+      <dd>
+        <ul>
+          {items.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .skills {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0;
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-2);
+    break-inside: avoid;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li:not(:last-child)::after {
+    margin-inline: 0.55em;
+    color: var(--color-text-muted);
+    content: '·';
+  }
+
+  @media (min-width: 40rem), print {
+    .group {
+      grid-template-columns: var(--width-date-column) minmax(0, 1fr);
+      gap: var(--space-5);
+    }
+
+    dt {
+      padding-top: 0.45em;
+    }
+  }
+
+  /* Plain blocks on paper: Chromium can overlap grid items that avoid page breaks. */
+  @media print {
+    .skills {
+      display: block;
+    }
+
+    .group {
+      margin-bottom: var(--space-3);
+    }
+  }
+</style>

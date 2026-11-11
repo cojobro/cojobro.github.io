@@ -1,0 +1,341 @@
+---
+/**
+ * One chapter of the research page: number, kicker, title, period, its overview, a link to the
+ * chapter's page and its publications. A chapter with a scene shows it on a screen of black
+ * glass that stays in view (a sticky stage) while the chapter's steps scroll past, and the
+ * scrolling drives the scene's stages.
+ *
+ * Layout: on wide screens the text runs in a column at the left and the screen stands beside it
+ * for the whole chapter. On narrow screens the introduction comes first, then the screen holds
+ * the upper part of the window while each step's caption comes to rest beneath it.
+ *
+ * Alignment: the steps list is the scene's scroll track. Its padding (half a window above and
+ * below, shifted by half the header) and one slot per step, each as tall as the window below the
+ * header, make slot i fill that window exactly when the scene's progress is in the middle of
+ * stage i, [i/N, (i+1)/N] (see `progressOf` in src/scenes/core/mount.ts). Each caption sticks at
+ * its resting place (`--rest`) while its slot passes, so it holds still to be read for most of
+ * its stage, then leaves as the next one arrives.
+ */
+import type { CollectionEntry } from 'astro:content';
+import Icon from '@/components/Icon.astro';
+import PublicationList from '@/components/PublicationList.astro';
+import SceneCanvas from '@/components/SceneCanvas.astro';
+import { researchPage } from '@/data/research';
+import { publicationsByIds } from '@/lib/publications';
+import ColorLegend from './ColorLegend.astro';
+
+interface Props {
+  entry: CollectionEntry<'research'>;
+  /** The chapter's number as displayed, e.g. "02". */
+  index: string;
+}
+
+const { entry, index } = Astro.props;
+const { id, data } = entry;
+const scene = data.scene && data.sceneLabel ? { name: data.scene, label: data.sceneLabel } : null;
+const steps = scene ? data.steps : [];
+const publications = publicationsByIds(data.publications);
+const titleId = `${id}-title`;
+const trackId = `${id}-steps`;
+---
+
+<section class:list={['chapter container', { staged: scene }]} id={id} aria-labelledby={titleId}>
+  <header class="intro">
+    <p class="number readout" aria-hidden="true">
+      {index}
+    </p>
+    <p class="kicker">
+      {data.kicker} <span class="kicker-part">{data.period}</span>
+      {data.status === 'exploratory' && <span class="kicker-part">{researchPage.exploratory}</span>}
+    </p>
+    <h2 id={titleId}>{data.title}</h2>
+    <p class="overview">{data.overview}</p>
+    <a class="more" href={`/research/${id}/`}>
+      {researchPage.more}
+      <span class="visually-hidden">: {data.title}</span>
+      <Icon name="arrow-right" />
+    </a>
+    {publications.length > 0 && (
+      <div class="publications">
+        <h3 class="kicker">
+          {publications.length > 1 ? 'Related publications' : 'Related publication'}
+        </h3>
+        <PublicationList publications={publications} />
+      </div>
+    )}
+  </header>
+
+  {scene && (
+    <div class="stage">
+      <div class="screen glass">
+        <SceneCanvas scene={scene.name} label={scene.label} scroll track={trackId} />
+        <p class="plate kicker" aria-hidden="true">
+          <span class="readout">Fig. {index}</span>
+          <span>{data.kicker}</span>
+        </p>
+        <div class="key">
+          <ColorLegend legend={researchPage.legend} compact />
+        </div>
+      </div>
+    </div>
+  )}
+
+  {steps.length > 0 && (
+    <ol class="steps" id={trackId} data-scene-track>
+      {steps.map((step, stepIndex) => (
+        <li class="step">
+          <div class="caption">
+            <p class="count readout" aria-hidden="true">
+              <span>{String(stepIndex + 1).padStart(2, '0')}</span> /{' '}
+              {String(steps.length).padStart(2, '0')}
+            </p>
+            <p>{step}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )}
+</section>
+
+<style>
+  .chapter {
+    /* The window below the sticky header: the height of each step's slot. */
+    --slot: calc(100vh - var(--header-height));
+    /* The screen's height on narrow screens, where captions rest beneath it. */
+    --glass: 54svh;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-text);
+  }
+
+  .chapter + :global(.chapter) {
+    margin-top: var(--space-9);
+  }
+
+  .intro {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+    padding-bottom: var(--space-7);
+  }
+
+  .number {
+    color: var(--color-accent-ink);
+    font-size: var(--text-sm);
+  }
+
+  h2 {
+    max-width: 16ch;
+    font-size: var(--text-3xl);
+    line-height: 1.02;
+  }
+
+  .overview {
+    max-width: 34rem;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+  }
+
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--weight-medium);
+  }
+
+  .publications {
+    display: grid;
+    gap: var(--space-4);
+    width: 100%;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* The screen and the steps share one cell; the screen sticks while the steps pass. */
+  .stage,
+  .steps {
+    grid-area: 2 / 1;
+  }
+
+  .stage {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-2));
+    z-index: 1;
+    align-self: start;
+    height: var(--glass);
+    --scene-inset: var(--scene-inset-story);
+  }
+
+  .glass {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-screen);
+    box-shadow: var(--shadow-screen);
+  }
+
+  /* Light falling across the top of the glass. */
+  .glass::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(120% 70% at 75% -10%, rgb(255 255 255 / 0.07), transparent 55%);
+    content: '';
+    pointer-events: none;
+  }
+
+  .plate {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-5);
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .plate .readout {
+    color: var(--color-accent-ink);
+    font-weight: 400;
+    text-transform: none;
+  }
+
+  .key {
+    position: absolute;
+    right: var(--space-5);
+    bottom: var(--space-4);
+    left: var(--space-5);
+  }
+
+  .steps {
+    margin: 0;
+    /* See the alignment note at the top of this file. */
+    padding: calc(50vh + var(--header-height) / 2) 0 calc(50vh - var(--header-height) / 2);
+    list-style: none;
+  }
+
+  .step {
+    height: var(--slot);
+  }
+
+  /* Narrow screens: each caption rests just under the screen, and leaves by sliding behind it. */
+  .caption {
+    --rest: calc(var(--header-height) + var(--glass) + var(--space-5));
+
+    position: sticky;
+    top: var(--rest);
+    display: grid;
+    gap: var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.32;
+  }
+
+  .count {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .count span {
+    color: var(--color-accent-ink);
+  }
+
+  /* Each caption comes into focus as it reaches its resting place, where the browser can. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .caption {
+        animation: arrive linear both;
+        animation-timeline: view();
+        animation-range: cover 0% cover 100%;
+      }
+    }
+  }
+
+  @keyframes arrive {
+    0% {
+      opacity: 0.1;
+    }
+    24%,
+    100% {
+      opacity: 1;
+    }
+  }
+
+  /* Wide screens: text in a column at the left, the screen beside it for the whole chapter. */
+  @media (min-width: 64rem) {
+    .chapter {
+      grid-template-columns: minmax(0, var(--width-story)) minmax(0, 1fr);
+      column-gap: var(--space-8);
+    }
+
+    .intro {
+      grid-area: 1 / 1;
+      padding-block: var(--space-7) var(--space-8);
+    }
+
+    .staged .intro {
+      min-height: calc(var(--slot) - var(--space-9));
+      align-content: center;
+    }
+
+    .steps {
+      grid-area: 2 / 1;
+    }
+
+    .stage {
+      grid-area: 1 / 2 / 3 / 3;
+      top: calc(var(--header-height) + var(--space-3));
+      height: calc(var(--slot) - 2 * var(--space-3));
+    }
+
+    /* The caption rests a third of the way down, and fades as it leaves. */
+    .caption {
+      --rest: 34vh;
+
+      font-size: var(--text-2xl);
+      line-height: 1.18;
+      letter-spacing: var(--tracking-display);
+    }
+
+    @supports (animation-timeline: view()) {
+      @media (prefers-reduced-motion: no-preference) {
+        .caption {
+          animation-name: pass;
+        }
+      }
+    }
+  }
+
+  @keyframes pass {
+    0%,
+    100% {
+      opacity: 0.08;
+    }
+    40%,
+    62% {
+      opacity: 1;
+    }
+  }
+
+  /* Paper: no screen; the steps print as a plain numbered list after the chapter text. */
+  @media print {
+    .stage {
+      display: none;
+    }
+
+    .steps {
+      padding: 0;
+    }
+
+    .step {
+      height: auto;
+    }
+
+    .caption {
+      position: static;
+      font-size: var(--text-base);
+    }
+  }
+</style>

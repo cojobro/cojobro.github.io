@@ -1,0 +1,88 @@
+---
+/**
+ * Links to the sections of a long page. A row of chips on small screens; give it a sticky
+ * column on wide ones. Hidden in print.
+ */
+import type { Link } from '@/data/types';
+
+interface Props {
+  /** Section labels and their `#id` targets, in page order. */
+  items: Link[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav class="on-this-page" aria-labelledby="on-this-page-title">
+  <h2 id="on-this-page-title" class="kicker">
+    On this page
+  </h2>
+  <ul>
+    {items.map(({ label, href }) => (
+      <li>
+        <a href={href}>{label}</a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .on-this-page {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  a:hover {
+    border-color: var(--color-text);
+    color: var(--color-text);
+  }
+
+  /* On wide screens: a quiet vertical list with a rule down its side. */
+  @media (min-width: 64rem) {
+    ul {
+      flex-direction: column;
+      gap: 0;
+      border-inline-start: 1px solid var(--color-border);
+    }
+
+    a {
+      margin-inline-start: -1px;
+      padding: var(--space-2) var(--space-4);
+      border: 0;
+      border-inline-start: 1px solid transparent;
+      border-radius: 0;
+    }
+
+    a:hover {
+      border-inline-start-color: var(--color-accent);
+    }
+  }
+
+  @media print {
+    .on-this-page {
+      display: none;
+    }
+  }
+</style>

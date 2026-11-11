@@ -1,0 +1,44 @@
+---
+/**
+ * The site's mark: a cochlea-like spiral in the text color, ending in a lit point (the accent).
+ * Decorative; it sizes with the surrounding text, so set `font-size` on its parent.
+ * `public/favicon.svg` draws the same shape.
+ */
+import { spiralPath, spiralPoint, type Spiral } from '@/lib/spiral';
+
+// The center sits right of the box's middle so the drawn spiral, not its pole, is centered.
+const spiral: Spiral = {
+  cx: 14.2,
+  cy: 12,
+  outerRadius: 13,
+  innerRadius: 2.5,
+  turns: 1.75,
+  startAngle: 0.75 * Math.PI,
+};
+const [apexX, apexY] = spiralPoint(spiral, 1);
+---
+
+<svg class="spiral-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path d={spiralPath(spiral)}></path>
+  <circle cx={apexX} cy={apexY} r="2.7"></circle>
+</svg>
+
+<style>
+  .spiral-mark {
+    flex: none;
+    width: 1.35em;
+    height: 1.35em;
+    overflow: visible;
+  }
+
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  circle {
+    fill: var(--color-accent);
+  }
+</style>

@@ -1,0 +1,45 @@
+---
+/**
+ * The legend that opens a section of a page, as on a faceplate: a rule across the page, and
+ * under it a number and a short label. Give `id` when the label is the section's accessible name.
+ */
+interface Props {
+  /** The section's number as displayed, e.g. "02". */
+  index?: string;
+  label: string;
+  id?: string;
+}
+
+const { index, label, id } = Astro.props;
+---
+
+<p class="section-label kicker" id={id}>
+  {index && (
+    <span class="index readout" aria-hidden="true">
+      {index}
+    </span>
+  )}
+  <span>{label}</span>
+</p>
+
+<style>
+  .section-label {
+    display: flex;
+    gap: var(--space-4);
+    align-items: baseline;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-text);
+    color: var(--color-text);
+  }
+
+  .index {
+    color: var(--color-accent-ink);
+    font-weight: 400;
+  }
+
+  @media print {
+    .section-label {
+      border-top-color: var(--color-border-strong);
+    }
+  }
+</style>

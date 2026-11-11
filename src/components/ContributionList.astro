@@ -1,0 +1,69 @@
+---
+/** Papers the site owner contributed to without authorship: what they did, then the citation. */
+import type { Contribution } from '@/data/types';
+
+interface Props {
+  contributions: Contribution[];
+}
+
+const { contributions } = Astro.props;
+---
+
+<ul class="contributions">
+  {contributions.map(({ role, citation, doi }) => (
+    <li>
+      <p class="role">{role}</p>
+      <p class="citation">{citation}</p>
+      {doi && (
+        <a class="doi" href={`https://doi.org/${doi}`}>
+          doi:{doi}
+        </a>
+      )}
+    </li>
+  ))}
+</ul>
+
+<style>
+  .contributions {
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-1);
+    padding-inline-start: var(--space-4);
+    border-inline-start: 2px solid var(--color-accent);
+  }
+
+  .role {
+    font-weight: var(--weight-medium);
+  }
+
+  .citation {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .doi {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
+
+  /* Plain blocks on paper: Chromium can overlap grid items that avoid page breaks. */
+  @media print {
+    .contributions {
+      display: block;
+    }
+
+    li {
+      margin-bottom: var(--space-4);
+      break-inside: avoid;
+    }
+  }
+</style>

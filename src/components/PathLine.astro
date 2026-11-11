@@ -1,0 +1,109 @@
+---
+/**
+ * The stops on the way to the current work, drawn as a signal path: one line running through a
+ * marked point per stop, the last one lit. A row on wide screens, a column on narrow ones.
+ */
+import type { PathStep } from '@/data/profile';
+
+interface Props {
+  steps: PathStep[];
+}
+
+const { steps } = Astro.props;
+---
+
+<ol class="path">
+  {steps.map(({ place, period, title, text }, index) => (
+    <li
+      class:list={['stop', { current: index === steps.length - 1 }]}
+      data-reveal
+      style={`--reveal-order: ${index}`}
+    >
+      <span class="node" aria-hidden="true" />
+      <p class="period readout">{period}</p>
+      <h4>{title}</h4>
+      <p class="place kicker">{place}</p>
+      <p class="text">{text}</p>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .path {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Narrow screens: the line runs down the left edge. */
+  .stop {
+    position: relative;
+    display: grid;
+    gap: var(--space-1);
+    padding: 0 0 var(--space-6) var(--space-6);
+    border-left: 1px solid var(--color-text);
+  }
+
+  .stop:last-child {
+    padding-bottom: 0;
+    border-left-color: transparent;
+  }
+
+  .node {
+    position: absolute;
+    top: 0.2rem;
+    left: -0.4375rem;
+    width: 0.8125rem;
+    height: 0.8125rem;
+    border: 1px solid var(--color-text);
+    border-radius: 50%;
+    background: var(--color-bg);
+  }
+
+  .current .node {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    box-shadow: 0 0 0 4px var(--color-accent-soft);
+  }
+
+  .period {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  h4 {
+    font-size: var(--text-xl);
+    line-height: var(--leading-tight);
+  }
+
+  .place {
+    margin-bottom: var(--space-2);
+  }
+
+  .text {
+    max-width: 44ch;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+  }
+
+  /* Wide screens: the line runs across the top, left to right. */
+  @media (min-width: 64rem) {
+    .path {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .stop,
+    .stop:last-child {
+      padding: var(--space-6) var(--space-5) 0 0;
+      border-top: 1px solid var(--color-text);
+      border-left: 0;
+    }
+
+    .node {
+      top: -0.4375rem;
+      left: 0;
+    }
+  }
+</style>

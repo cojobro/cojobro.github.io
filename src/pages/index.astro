@@ -1,0 +1,487 @@
+---
+/**
+ * The home page. It opens with the instrument (the one scripted part), then tells the story in
+ * plain HTML: the problem, the research, who Conor is and how he got here, where it is going,
+ * and what is new.
+ */
+import { Picture } from 'astro:assets';
+import portrait from '@/assets/portrait.jpg';
+import ChapterIndex from '@/components/ChapterIndex.astro';
+import Icon from '@/components/Icon.astro';
+import Instrument from '@/components/Instrument.astro';
+import NervePair from '@/components/NervePair.astro';
+import NewsList from '@/components/NewsList.astro';
+import PathLine from '@/components/PathLine.astro';
+import SectionLabel from '@/components/SectionLabel.astro';
+import { about, branches, goal, newsSection, problem, work } from '@/data/home';
+import { news } from '@/data/news';
+import { bio, careerGoal, interests, path } from '@/data/profile';
+import { nav, profiles, site } from '@/data/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getOrderedEntries } from '@/lib/content';
+
+const entries = await getOrderedEntries('research');
+const chapters = entries.filter(({ data }) => data.status !== 'earlier');
+
+// The goal's first sentence is set large; the rest follows as text.
+const firstStop = careerGoal.indexOf('. ') + 1;
+const goalLead = firstStop > 0 ? careerGoal.slice(0, firstStop) : careerGoal;
+const goalRest = firstStop > 0 ? careerGoal.slice(firstStop + 1) : '';
+
+/** Branches of the site not already introduced on this page. */
+const otherBranches = nav.filter(({ href }) => href !== '/research/');
+
+/** Who this site is about, for search engines (schema.org). */
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  url: Astro.site?.href,
+  email: `mailto:${site.email}`,
+  jobTitle: site.role,
+  affiliation: { '@type': 'CollegeOrUniversity', name: site.affiliation },
+  description: site.description,
+  sameAs: profiles.map(({ href }) => href),
+};
+---
+
+<BaseLayout>
+  <script type="application/ld+json" slot="head" is:inline set:html={JSON.stringify(person)} />
+  <Instrument />
+
+  <section class="problem container" aria-labelledby="problem-title">
+    <SectionLabel index="01" label={problem.kicker} />
+    <h2 id="problem-title" class="statement" data-reveal>
+      {problem.statement[0]}
+      <em>{problem.statement[1]}</em>
+      {problem.statement[2]}
+    </h2>
+    <div class="columns">
+      {problem.paragraphs.map((paragraph, index) => (
+        <p data-reveal style={`--reveal-order: ${index + 1}`}>
+          {paragraph}
+        </p>
+      ))}
+    </div>
+    <div class="figure" data-reveal>
+      <NervePair />
+    </div>
+  </section>
+
+  <section class="work container" id="research" aria-labelledby="work-title">
+    <SectionLabel index="02" label={work.kicker} />
+    <div class="work-head">
+      <h2 id="work-title" data-reveal>
+        {work.title}
+      </h2>
+      <p data-reveal style="--reveal-order: 1">
+        {work.intro}
+      </p>
+    </div>
+    <ChapterIndex entries={chapters} />
+    <a class="more" href="/research/">
+      {work.all}
+      <Icon name="arrow-right" />
+    </a>
+  </section>
+
+  <section class="about container" id="about" aria-labelledby="about-title">
+    <SectionLabel index="03" label={about.kicker} />
+    <div class="about-grid">
+      <figure class="portrait" data-reveal>
+        <Picture
+          src={portrait}
+          alt={`Portrait of ${site.name}`}
+          widths={[320, 480, 640, 960]}
+          sizes="(min-width: 64rem) 24rem, (min-width: 40rem) 20rem, 70vw"
+          formats={['avif', 'webp']}
+        />
+        <figcaption class="kicker">
+          {site.name} <span class="kicker-part">{site.location}</span>
+        </figcaption>
+      </figure>
+      <div class="bio">
+        <h2 id="about-title" class="visually-hidden">
+          About {site.name}
+        </h2>
+        {bio.map((paragraph, index) => (
+          <p class:list={{ opening: index === 0 }} data-reveal style={`--reveal-order: ${index}`}>
+            {paragraph}
+          </p>
+        ))}
+        <div class="interests" data-reveal>
+          <h3 class="kicker">{about.interestsTitle}</h3>
+          <ul>
+            {interests.map((interest) => (
+              <li>{interest}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="route">
+      <h3 data-reveal>{about.pathTitle}</h3>
+      <PathLine steps={path} />
+    </div>
+  </section>
+
+  <section class="goal" id="goal" aria-labelledby="goal-title">
+    <div class="screen goal-glass">
+      <div class="container goal-inner">
+        <p class="kicker" id="goal-title">
+          {goal.kicker}
+        </p>
+        <p class="goal-lead" data-reveal>
+          {goalLead}
+        </p>
+        {goalRest && (
+          <p class="goal-rest" data-reveal style="--reveal-order: 1">
+            {goalRest}
+          </p>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <section class="latest container" id="news" aria-labelledby="news-title">
+    <SectionLabel index="04" label={newsSection.kicker} />
+    <div class="latest-grid">
+      <h2 id="news-title" data-reveal>
+        {newsSection.title}
+      </h2>
+      <NewsList items={news} />
+    </div>
+  </section>
+
+  <section class="branches container" aria-labelledby="branches-title">
+    <SectionLabel index="05" label={branches.kicker} id="branches-title" />
+    <ul>
+      {otherBranches.map(({ href, label, description }, index) => (
+        <li data-reveal style={`--reveal-order: ${index}`}>
+          <a href={href}>
+            <span class="branch-title">
+              {label}
+              <Icon name="arrow-right" />
+            </span>
+            <span class="branch-text">{description}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  section {
+    margin-top: var(--space-9);
+  }
+
+  /* ── 01 The problem ───────────────────────────────────────────────────────────────────── */
+
+  .problem {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .statement {
+    max-width: 17ch;
+    font-size: var(--text-display);
+    font-weight: 330;
+    line-height: var(--leading-display);
+    letter-spacing: -0.03em;
+  }
+
+  .statement em {
+    color: var(--color-accent-ink);
+  }
+
+  .columns {
+    display: grid;
+    gap: var(--space-5);
+    max-width: 72rem;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+  }
+
+  /* ── 02 The research ──────────────────────────────────────────────────────────────────── */
+
+  .work {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .work-head {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .work-head h2 {
+    max-width: 24ch;
+    font-size: var(--text-3xl);
+    line-height: 1.04;
+  }
+
+  .work-head p {
+    max-width: 38ch;
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+  }
+
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    justify-self: start;
+    font-weight: var(--weight-medium);
+  }
+
+  /* ── 03 About ─────────────────────────────────────────────────────────────────────────── */
+
+  .about {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .about-grid {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .portrait {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    width: min(100%, 20rem);
+  }
+
+  /* The photograph is printed onto the faceplate: gray, its white ground taking the page color. */
+  .portrait :global(img) {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.08);
+    mix-blend-mode: multiply;
+  }
+
+  .bio {
+    display: grid;
+    gap: var(--space-5);
+    max-width: 44rem;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+  }
+
+  .bio .opening {
+    font-size: var(--text-xl);
+    line-height: 1.38;
+  }
+
+  .interests {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    font-family: var(--font-body);
+  }
+
+  .interests ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .interests li {
+    padding: 0.3em 0.8em;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+  }
+
+  .route {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .route h3 {
+    max-width: 18ch;
+    font-size: var(--text-2xl);
+  }
+
+  /* ── Where this is going: a second piece of glass ─────────────────────────────────────── */
+
+  .goal {
+    padding-inline: clamp(0.5rem, 1.2vw, 0.875rem);
+  }
+
+  .goal-glass {
+    padding-block: var(--space-8);
+    border-radius: var(--radius-screen);
+    background:
+      radial-gradient(90% 120% at 100% 0%, rgb(255 255 255 / 0.06), transparent 55%),
+      var(--color-bg);
+    box-shadow: var(--shadow-screen);
+  }
+
+  .goal-inner {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .goal-lead {
+    max-width: 20ch;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: 340;
+    line-height: 1.04;
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+
+  .goal-rest {
+    max-width: 58ch;
+    color: var(--color-text-muted);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+  }
+
+  /* ── 04 News, 05 Branches ─────────────────────────────────────────────────────────────── */
+
+  .latest,
+  .branches {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .latest-grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .latest h2 {
+    font-size: var(--text-3xl);
+  }
+
+  .branches ul {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .branches a {
+    display: grid;
+    gap: var(--space-3);
+    height: 100%;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-surface);
+    text-decoration: none;
+    transition:
+      background-color var(--duration-base) var(--ease-out),
+      border-color var(--duration-base) var(--ease-out);
+  }
+
+  .branches a:hover {
+    border-color: var(--color-text);
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+  }
+
+  .branch-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-display);
+    line-height: 1;
+    letter-spacing: var(--tracking-display);
+  }
+
+  .branch-title :global(.icon) {
+    width: 0.5em;
+    height: 0.5em;
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      color var(--duration-base) var(--ease-out);
+  }
+
+  .branches a:hover :global(.icon) {
+    color: var(--color-accent);
+    transform: translateX(0.3rem);
+  }
+
+  .branch-text {
+    max-width: 40ch;
+    color: var(--color-text-muted);
+    line-height: var(--leading-snug);
+  }
+
+  @media (min-width: 48rem) {
+    .columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-7);
+    }
+
+    .branches ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .branches a {
+      padding: var(--space-6);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    section {
+      margin-top: var(--space-10);
+    }
+
+    .work-head {
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      gap: var(--space-8);
+      align-items: end;
+    }
+
+    .about-grid {
+      grid-template-columns: 24rem minmax(0, 1fr);
+      gap: var(--space-9);
+    }
+
+    .portrait {
+      position: sticky;
+      top: calc(var(--header-height) + var(--space-6));
+      width: 100%;
+    }
+
+    .goal-glass {
+      padding-block: var(--space-10);
+    }
+
+    .goal-inner {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: var(--space-6) var(--space-8);
+      align-items: end;
+    }
+
+    .goal-inner .kicker {
+      grid-column: 1 / -1;
+    }
+
+    .latest-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+      gap: var(--space-8);
+    }
+  }
+</style>

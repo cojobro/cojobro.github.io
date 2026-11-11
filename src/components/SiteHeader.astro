@@ -1,0 +1,149 @@
+---
+/**
+ * Site-wide header: the mark and name (home link) and the main navigation, set like the legends
+ * along the top of an instrument's faceplate. It stays at the top of the window, translucent
+ * over the page, `--header-height` tall.
+ */
+import SpiralMark from '@/components/SpiralMark.astro';
+import { nav, site } from '@/data/site';
+
+const current = Astro.url.pathname;
+
+/** "page" on the link's own page, "true" anywhere below it (e.g. a research chapter). */
+function currentState(href: string): 'page' | 'true' | undefined {
+  if (current === href) return 'page';
+  return current.startsWith(href) ? 'true' : undefined;
+}
+---
+
+<header class="site-header">
+  <div class="bar">
+    <a class="home" href="/" aria-current={current === '/' ? 'page' : undefined}>
+      <SpiralMark />
+      <span class="name">{site.name}</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        {nav.map(({ label, href }, index) => (
+          <li>
+            <a href={href} aria-current={currentState(href)}>
+              <span class="index readout" aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    height: var(--header-height);
+    background: var(--color-overlay);
+    -webkit-backdrop-filter: var(--backdrop-overlay);
+    backdrop-filter: var(--backdrop-overlay);
+    view-transition-name: site-header;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    height: 100%;
+    padding-inline: var(--gutter);
+  }
+
+  .home {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-strong);
+    font-stretch: 92%;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  ul {
+    display: flex;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: var(--space-2) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-strong);
+    font-stretch: var(--stretch-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  nav a:hover,
+  nav a[aria-current] {
+    color: var(--color-text);
+  }
+
+  /* The number beside each legend; on the current branch it is a lit lamp instead. */
+  .index {
+    display: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-2xs);
+    font-weight: 400;
+  }
+
+  nav a[aria-current] .index {
+    color: var(--color-accent-ink);
+  }
+
+  /* Phones too narrow for the name and the links keep only the mark; the name stays for screen
+     readers. */
+  @media (max-width: 22.9rem) {
+    .name {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .home {
+      font-size: var(--text-base);
+    }
+
+    ul {
+      gap: var(--space-4);
+    }
+
+    .index {
+      display: inline;
+    }
+  }
+
+  @media print {
+    .site-header {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,165 @@
+---
+/**
+ * One project from the `projects` collection, as a row of the projects page: its number, year
+ * and tags in a side column, then the title, the summary, the cover photo (when there is one),
+ * the Markdown body and the links.
+ */
+import { Picture } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import ButtonLink from '@/components/ButtonLink.astro';
+import Tag from '@/components/Tag.astro';
+
+interface Props {
+  entry: CollectionEntry<'projects'>;
+  /** The project's number as displayed, e.g. "01". */
+  index: string;
+}
+
+const { entry, index } = Astro.props;
+const { title, summary, year, tags, cover, coverAlt, links } = entry.data;
+const { Content } = await render(entry);
+const titleId = `${entry.id}-title`;
+const isExternal = (href: string) => /^https?:\/\//.test(href);
+---
+
+<article class="project" id={entry.id} aria-labelledby={titleId} data-reveal>
+  <div class="side">
+    <p class="number readout" aria-hidden="true">
+      {index}
+    </p>
+    {year && <p class="year readout">{year}</p>}
+    {tags.length > 0 && (
+      <ul class="tags" aria-label="Tags">
+        {tags.map((tag) => (
+          <li>
+            <Tag>{tag}</Tag>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+
+  <div class="main">
+    <h2 id={titleId}>{title}</h2>
+    <p class="summary">{summary}</p>
+    {cover && coverAlt && (
+      <Picture
+        class="cover"
+        src={cover}
+        alt={coverAlt}
+        widths={[480, 720, 960, 1280, 1600]}
+        sizes="(min-width: 64rem) 56rem, calc(100vw - 2rem)"
+        formats={['avif', 'webp']}
+      />
+    )}
+    <div class="prose body">
+      <Content />
+    </div>
+    {links.length > 0 && (
+      <ul class="links">
+        {links.map(({ label, href }) => (
+          <li>
+            <ButtonLink href={href} icon={isExternal(href) ? 'arrow-up-right' : 'document'}>
+              {label}
+            </ButtonLink>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</article>
+
+<style>
+  .project {
+    display: grid;
+    gap: var(--space-5);
+    padding-block: var(--space-5) var(--space-8);
+    border-top: 1px solid var(--color-text);
+  }
+
+  .side {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-4);
+    align-items: center;
+    align-content: start;
+  }
+
+  .number {
+    color: var(--color-accent-ink);
+    font-size: var(--text-sm);
+  }
+
+  .year {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .main {
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+    min-width: 0;
+  }
+
+  h2 {
+    max-width: 18ch;
+    font-size: var(--text-3xl);
+    line-height: 1.02;
+  }
+
+  .summary {
+    max-width: 44ch;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    line-height: 1.32;
+  }
+
+  .cover {
+    width: 100%;
+    max-width: 56rem;
+    margin-block: var(--space-3);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-surface);
+  }
+
+  .body {
+    color: var(--color-text-muted);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Wide screens: number, year and tags in a column beside the text. */
+  @media (min-width: 64rem) {
+    .project {
+      grid-template-columns: 16rem minmax(0, 1fr);
+      gap: var(--space-8);
+      padding-block: var(--space-5) var(--space-9);
+    }
+
+    .side {
+      position: sticky;
+      top: calc(var(--header-height) + var(--space-6));
+      flex-direction: column;
+      align-items: flex-start;
+      align-self: start;
+    }
+  }
+</style>

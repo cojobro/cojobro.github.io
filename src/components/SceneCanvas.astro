@@ -1,0 +1,103 @@
+---
+/**
+ * A 3D scene that fills its parent: give the parent a size. The scene starts when it nears the
+ * viewport (see `src/scenes/core/mount.ts`). Where it cannot run (no WebGL, JavaScript off, an
+ * error) the `fallback` slot shows instead: by default the scene's description, `label`.
+ *
+ * To keep the subject clear of text laid over the scene, set `--scene-inset` on the parent (any
+ * CSS lengths, in `padding` order): the scene frames its subject in the room inside it while its
+ * glow and particles still reach the element's edges. The fallback is centered in that room too.
+ */
+import type { SceneName } from '@/scenes/names';
+
+interface Props {
+  /** Which scene to show; see `src/scenes/names.ts`. */
+  scene: SceneName;
+  /** What the scene shows: read to screen-reader users, and shown where the scene cannot run. */
+  label: string;
+  /**
+   * Drive the scene's `setProgress` from scrolling: 0 → 1 across the nearest ancestor marked
+   * `data-scene-track`, or across this element when there is none.
+   */
+  scroll?: boolean;
+  /**
+   * With `scroll`: the id of the track to follow instead, for a scene that sits beside its
+   * track rather than inside it (e.g. a sticky stage next to the captions that scroll past it).
+   */
+  track?: string;
+}
+
+const { scene, label, scroll = false, track } = Astro.props;
+---
+
+<div
+  class="scene"
+  data-scene={scene}
+  data-scene-scroll={scroll ? '' : undefined}
+  data-scene-track-id={scroll ? track : undefined}
+  role="img"
+  aria-label={label}
+>
+  <canvas></canvas>
+  <div class="scene__fallback">
+    <slot name="fallback">
+      <p class="scene__description">{label}</p>
+    </slot>
+  </div>
+</div>
+
+<style>
+  /* The padding only carries `--scene-inset` to the host script and lays out the fallback. */
+  .scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: var(--scene-inset, 0);
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity var(--duration-slow) var(--ease-out);
+  }
+
+  .scene[data-scene-state='running'] canvas {
+    opacity: 1;
+  }
+
+  /* Shown only once the scene has given up, or when scripts cannot run at all. */
+  .scene__fallback {
+    display: none;
+    place-items: center;
+    height: 100%;
+    padding: var(--space-5) var(--gutter);
+  }
+
+  .scene[data-scene-state='fallback'] .scene__fallback {
+    display: grid;
+  }
+
+  @media (scripting: none) {
+    .scene__fallback {
+      display: grid;
+    }
+  }
+
+  .scene__description {
+    max-width: 36ch;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    text-align: center;
+  }
+</style>
+
+<script>
+  import { mountScenes } from '@/scenes/core/mount';
+
+  mountScenes();
+</script>

@@ -1,0 +1,49 @@
+---
+/** A labelled group inside a CV section, e.g. the research positions or the journal articles. */
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<div class="group">
+  <h3 class="kicker">{title}</h3>
+  <div class="entries">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .group {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  h3 {
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border-strong);
+    color: var(--color-accent-ink);
+  }
+
+  .entries {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  /* Plain blocks on paper: see Section.astro. */
+  @media print {
+    .group,
+    .entries {
+      display: block;
+    }
+
+    .group {
+      margin-bottom: var(--space-6);
+    }
+
+    h3 {
+      margin-bottom: var(--space-4);
+    }
+  }
+</style>

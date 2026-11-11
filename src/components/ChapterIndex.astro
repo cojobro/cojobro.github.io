@@ -1,0 +1,161 @@
+---
+/**
+ * The current research chapters as a numbered index, for the home page: each row is a link to
+ * the chapter's place on the research page. The whole row is clickable; only the title is the
+ * link, so screen readers hear a short name.
+ */
+import type { CollectionEntry } from 'astro:content';
+import Icon from '@/components/Icon.astro';
+import { work } from '@/data/home';
+
+interface Props {
+  entries: CollectionEntry<'research'>[];
+}
+
+const { entries } = Astro.props;
+---
+
+<ol class="chapters">
+  {entries.map(({ id, data }, index) => (
+    <li class="chapter" data-reveal style={`--reveal-order: ${index}`}>
+      <p class="number readout" aria-hidden="true">
+        {String(index + 1).padStart(2, '0')}
+      </p>
+      <div class="head">
+        <p class="kicker">
+          {data.kicker}
+          {data.status === 'exploratory' && (
+            <span class="kicker-part">{work.statusLabels.exploratory}</span>
+          )}
+        </p>
+        <h3>
+          <a href={`/research/#${id}`}>{data.title}</a>
+        </h3>
+      </div>
+      <p class="summary">{data.summary}</p>
+      <span class="arrow">
+        <Icon name="arrow-right" />
+      </span>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .chapters {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--color-text);
+    list-style: none;
+  }
+
+  .chapter {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-3);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-text);
+  }
+
+  /* The row lifts off the faceplate under the pointer. */
+  .chapter::before {
+    position: absolute;
+    inset: 0 calc(-1 * var(--space-4));
+    z-index: -1;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    content: '';
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-out);
+  }
+
+  .chapter:hover::before,
+  .chapter:focus-within::before {
+    opacity: 1;
+  }
+
+  .number {
+    padding-top: 0.2rem;
+    color: var(--color-accent-ink);
+    font-size: var(--text-xs);
+  }
+
+  .head {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  h3 {
+    font-size: var(--text-2xl);
+    line-height: 1.05;
+  }
+
+  h3 a {
+    text-decoration: none;
+  }
+
+  /* The whole row is the link's target. */
+  h3 a::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+  }
+
+  h3 a:focus-visible {
+    outline: none;
+  }
+
+  .chapter:has(a:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  .summary {
+    grid-column: 2 / -1;
+    max-width: 52ch;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+  }
+
+  .arrow {
+    display: inline-flex;
+    grid-area: 1 / 3;
+    align-self: center;
+    color: var(--color-text);
+    font-size: 1.5rem;
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      color var(--duration-base) var(--ease-out);
+  }
+
+  .chapter:hover .arrow {
+    color: var(--color-accent);
+    transform: translateX(0.4rem);
+  }
+
+  @media (min-width: 64rem) {
+    .chapter {
+      grid-template-columns: 5rem minmax(0, 1.1fr) minmax(0, 1fr) 3rem;
+      gap: var(--space-6);
+      align-items: baseline;
+      padding-block: var(--space-6);
+    }
+
+    .number {
+      font-size: var(--text-sm);
+    }
+
+    .summary {
+      grid-column: auto;
+      font-size: var(--text-base);
+    }
+
+    .arrow {
+      grid-area: auto;
+      justify-self: end;
+      font-size: 1.75rem;
+    }
+  }
+</style>

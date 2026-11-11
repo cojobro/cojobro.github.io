@@ -1,0 +1,179 @@
+---
+/**
+ * Site-wide footer, on black glass: an invitation to write, the profiles and the CV, and a
+ * colophon.
+ */
+import Icon from '@/components/Icon.astro';
+import SpiralMark from '@/components/SpiralMark.astro';
+import { colophon } from '@/data/profile';
+import { nav, profiles, site } from '@/data/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer screen">
+  <div class="container inner">
+    <div class="invitation">
+      <p class="kicker">{colophon.invitation}</p>
+      <a class="email" href={`mailto:${site.email}`}>
+        <span>{site.email}</span>
+        <Icon name="arrow-up-right" />
+      </a>
+    </div>
+
+    <div class="columns">
+      <div class="column">
+        <p class="kicker">Site</p>
+        <ul>
+          <li>
+            <a href="/">Home</a>
+          </li>
+          {nav.map(({ label, href }) => (
+            <li>
+              <a href={href}>{label}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="column">
+        <p class="kicker">Elsewhere</p>
+        <ul>
+          {profiles.map(({ label, href }) => (
+            <li>
+              <a href={href}>{label}</a>
+            </li>
+          ))}
+          <li>
+            <a href={site.cvPdf}>CV (PDF)</a>
+          </li>
+        </ul>
+      </div>
+      <div class="column colophon">
+        <p class="kicker">Colophon</p>
+        <p>{colophon.text}</p>
+      </div>
+    </div>
+
+    <div class="base">
+      <p class="name">
+        <SpiralMark />
+        {site.name}
+      </p>
+      <p class="kicker">
+        {site.affiliation} <span class="kicker-part">{site.location}</span>
+        <span class="kicker-part">© {year}</span>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--space-9);
+    padding-block: var(--space-8) var(--space-6);
+  }
+
+  .inner {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .invitation {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  /* The address at display size: the footer's one loud line. */
+  .email {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3em;
+    justify-self: start;
+    max-width: 100%;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 0.6rem + 4.4vw, 4.5rem);
+    font-weight: 340;
+    line-height: 1.05;
+    letter-spacing: var(--tracking-display);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.14em;
+  }
+
+  .email span {
+    overflow-wrap: anywhere;
+  }
+
+  .email :global(.icon) {
+    width: 0.55em;
+    height: 0.55em;
+    color: var(--color-accent);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .email:hover :global(.icon) {
+    transform: translate(0.12em, -0.12em);
+  }
+
+  .columns {
+    display: grid;
+    gap: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .column {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    font-size: var(--text-sm);
+  }
+
+  ul {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .column a {
+    text-decoration-color: transparent;
+  }
+
+  .column a:hover {
+    text-decoration-color: var(--color-accent);
+  }
+
+  .colophon p:last-child {
+    max-width: 46ch;
+    color: var(--color-text-muted);
+  }
+
+  .base {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--weight-strong);
+    font-stretch: 92%;
+  }
+
+  @media (min-width: 48rem) {
+    .columns {
+      grid-template-columns: 1fr 1fr 2fr;
+    }
+  }
+
+  @media print {
+    .site-footer {
+      display: none;
+    }
+  }
+</style>

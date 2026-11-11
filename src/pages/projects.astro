@@ -1,0 +1,36 @@
+---
+/** The projects page: one row per entry of the `projects` collection. */
+import PageHeader from '@/components/PageHeader.astro';
+import ProjectCard from '@/components/ProjectCard.astro';
+import { nav } from '@/data/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getOrderedEntries } from '@/lib/content';
+
+const projects = await getOrderedEntries('projects');
+/** The page's own line on the home page doubles as its introduction. */
+const intro = nav.find((item) => item.href === '/projects/')?.description;
+---
+
+<BaseLayout title="Projects" description={intro}>
+  <div class="container">
+    <PageHeader title="Projects" kicker="Outside the lab">
+      {intro && <p>{intro}</p>}
+    </PageHeader>
+    <ol class="projects">
+      {projects.map((entry, index) => (
+        <li>
+          <ProjectCard entry={entry} index={String(index + 1).padStart(2, '0')} />
+        </li>
+      ))}
+    </ol>
+  </div>
+</BaseLayout>
+
+<style>
+  .projects {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+</style>

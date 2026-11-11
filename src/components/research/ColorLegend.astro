@@ -1,0 +1,88 @@
+---
+/**
+ * What the colors in the 3D scenes mean, each beside a swatch of its color. The same three colors
+ * carry the same meaning in every scene (see `src/scenes/core/palette.ts`). `compact` is the
+ * small version printed in the corner of each scene's screen.
+ */
+type Meaning = 'signal' | 'spike' | 'decode';
+
+interface Props {
+  /** What each meaning color stands for, in plain words. */
+  legend: Record<Meaning, string>;
+  compact?: boolean;
+}
+
+const { legend, compact = false } = Astro.props;
+const meanings: Meaning[] = ['signal', 'spike', 'decode'];
+---
+
+<div class:list={['legend', { compact }]}>
+  {!compact && (
+    <p class="kicker" aria-hidden="true">
+      Color key
+    </p>
+  )}
+  <ul aria-label="Color key">
+    {meanings.map((meaning) => (
+      <li>
+        <span class:list={['swatch', meaning]} aria-hidden="true" />
+        {legend[meaning]}
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .legend {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .compact ul {
+    gap: var(--space-1) var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-2xs);
+  }
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .swatch {
+    flex: none;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: var(--radius-full);
+    background: var(--swatch);
+  }
+
+  .compact .swatch {
+    width: 0.4rem;
+    height: 0.4rem;
+    box-shadow: 0 0 0.5rem var(--swatch);
+  }
+
+  .signal {
+    --swatch: var(--color-signal);
+  }
+
+  .spike {
+    --swatch: var(--color-spike);
+  }
+
+  .decode {
+    --swatch: var(--color-decode);
+  }
+</style>

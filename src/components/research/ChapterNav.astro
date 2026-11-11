@@ -1,0 +1,116 @@
+---
+/** Links from one research entry to the entries before and after it, and back to the overview. */
+import type { CollectionEntry } from 'astro:content';
+import Icon from '@/components/Icon.astro';
+
+interface Props {
+  previous?: CollectionEntry<'research'>;
+  next?: CollectionEntry<'research'>;
+}
+
+const { previous, next } = Astro.props;
+---
+
+<nav class="chapter-nav" aria-label="Research">
+  <ul class="neighbors">
+    {previous && (
+      <li class="previous">
+        <a href={`/research/${previous.id}/`} rel="prev">
+          <span class="kicker">
+            <Icon name="arrow-left" /> Previous
+          </span>
+          <span class="title">{previous.data.title}</span>
+        </a>
+      </li>
+    )}
+    {next && (
+      <li class="next">
+        <a href={`/research/${next.id}/`} rel="next">
+          <span class="kicker">
+            Next <Icon name="arrow-right" />
+          </span>
+          <span class="title">{next.data.title}</span>
+        </a>
+      </li>
+    )}
+  </ul>
+  <a class="overview" href="/research/">
+    All research
+  </a>
+</nav>
+
+<style>
+  .chapter-nav {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .neighbors {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .neighbors a {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    height: 100%;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-surface);
+    color: var(--color-text);
+    text-decoration: none;
+    transition:
+      border-color var(--duration-base) var(--ease-out),
+      background-color var(--duration-base) var(--ease-out);
+  }
+
+  .neighbors a:hover {
+    border-color: var(--color-text);
+    background: var(--color-surface-raised);
+  }
+
+  .neighbors .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+  }
+
+  .next a {
+    justify-items: end;
+    text-align: end;
+  }
+
+  .overview {
+    justify-self: start;
+    font-size: var(--text-sm);
+  }
+
+  @media (min-width: 48rem) {
+    .neighbors {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .next {
+      grid-column: 2;
+    }
+  }
+
+  @media print {
+    .chapter-nav {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,1217 @@
+---
+/**
+ * The home page's opening: an instrument for listening the way a cochlear implant delivers
+ * sound. A screen of black glass shows a cochlea, its nerve and the implant's electrodes; the
+ * faceplate below it carries the controls. Pressing play starts a recording, heard either as it
+ * is or through a sketch of an implant (`src/instrument/`), and the picture follows the sound.
+ *
+ * The page's `h1` and tagline sit on the screen. Without JavaScript the screen shows them over a
+ * still drawing and the controls are hidden.
+ */
+import { tagline } from '@/data/profile';
+import { instrument } from '@/data/instrument';
+import { site } from '@/data/site';
+import {
+  ARRAY_APICAL_PLACE,
+  ARRAY_OFFSET,
+  ELECTRODE_COUNT,
+  ELECTRODE_PLACES,
+  SPIRAL_MARGIN,
+  seededRandom,
+  spiralAt,
+  turnGap,
+} from '@/instrument/model';
+
+// A still of the cochlea for the moment before the display starts, and for visitors without
+// JavaScript: the same geometry the display draws, in the same box, so the two line up.
+const extent = 1 + SPIRAL_MARGIN;
+const point = (x: number, y: number) => `${x.toFixed(3)},${y.toFixed(3)}`;
+const along = (from: number, to: number, offset: number, steps: number) =>
+  Array.from({ length: steps + 1 }, (_, step) => {
+    const { x, y, inwardX, inwardY } = spiralAt(from + ((to - from) * step) / steps);
+    return `${step === 0 ? 'M' : 'L'}${point(x - inwardX * offset, y - inwardY * offset)}`;
+  }).join('');
+const still = {
+  viewBox: `${-extent} ${-extent} ${2 * extent} ${2 * extent}`,
+  membrane: along(0, 1, 0, 240),
+  array: along(0, ARRAY_APICAL_PLACE + 0.012, ARRAY_OFFSET, 120),
+  contacts: ELECTRODE_PLACES.map((place) => {
+    const { x, y, inwardX, inwardY } = spiralAt(place);
+    return { cx: x - inwardX * ARRAY_OFFSET, cy: y - inwardY * ARRAY_OFFSET };
+  }),
+  fibers: (() => {
+    const random = seededRandom(22);
+    const count = 420;
+    let path = '';
+    for (let i = 0; i < count; i++) {
+      const place = (i + 0.5) / count;
+      const { x, y, inwardX, inwardY } = spiralAt(place);
+      const length = turnGap(place) * (0.3 + 0.14 * random());
+      path += `M${point(x, y)}L${point(x + inwardX * length, y + inwardY * length)}`;
+    }
+    return path;
+  })(),
+};
+
+// The tagline's first clause is set brighter than the rest.
+const comma = tagline.indexOf(',');
+const lead = comma > 0 ? tagline.slice(0, comma + 1) : tagline;
+const rest = comma > 0 ? tagline.slice(comma + 1) : '';
+---
+
+<section class="instrument" data-instrument data-state="idle" aria-labelledby="instrument-title">
+  <div class="screen glass" data-screen>
+    <canvas class="layer" data-layer="base" aria-hidden="true"></canvas>
+    <canvas class="layer live" data-layer="live" aria-hidden="true"></canvas>
+    <p class="visually-hidden">{instrument.description}</p>
+    <div class="focus" data-focus aria-hidden="true">
+      <svg class="still" viewBox={still.viewBox}>
+        <path class="still-fibers" d={still.fibers}></path>
+        <path class="still-membrane" d={still.membrane}></path>
+        <path class="still-array" d={still.array}></path>
+        {still.contacts.map(({ cx, cy }) => (
+          <circle cx={cx} cy={cy} r="0.0125" />
+        ))}
+      </svg>
+    </div>
+
+    <div class="copy">
+      <p class="kicker identity">
+        {site.role} <span class="kicker-part">{site.affiliation}</span>
+      </p>
+      <h1 id="instrument-title">{site.name}</h1>
+      <p class="statement">
+        <span class="lead">{lead}</span>
+        {rest}
+      </p>
+
+      <div class="transport">
+        <button class="play" type="button" data-play aria-pressed="false">
+          <span class="play-icon" aria-hidden="true"></span>
+          <span class="visually-hidden" data-play-label>
+            {instrument.play}
+          </span>
+        </button>
+        <div class="prompt">
+          <p aria-live="polite">
+            <span class="prompt-title" data-prompt-title>
+              {instrument.prompts.idle.title}
+            </span>
+            <span class="prompt-text" data-prompt-text>
+              {instrument.prompts.idle.text}
+            </span>
+          </p>
+          <button class="flip" type="button" data-flip hidden>
+            <span data-flip-label>{instrument.flip.natural}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="legend" aria-label="Color key">
+      <li class="signal">{instrument.legend.signal}</li>
+      <li class="spike">{instrument.legend.spike}</li>
+    </ul>
+
+    <div class="record" aria-hidden="true">
+      <p class="kicker record-label" data-record-label>
+        {instrument.record.implant}
+      </p>
+      <canvas class="strip" data-layer="strip"></canvas>
+    </div>
+  </div>
+
+  <form class="deck" data-deck aria-label={instrument.deckLabel}>
+    <div class="control listen" role="radiogroup" aria-labelledby="instrument-listen">
+      <p class="kicker" id="instrument-listen">
+        {instrument.controls.listen.label}
+      </p>
+      <div class="switch">
+        <label>
+          <input type="radio" name="mode" value="implant" checked />
+          <span>{instrument.controls.listen.implant}</span>
+        </label>
+        <label>
+          <input type="radio" name="mode" value="natural" />
+          <span>{instrument.controls.listen.natural}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="control">
+      <label class="kicker" for="instrument-electrodes">
+        {instrument.controls.electrodes}
+      </label>
+      <div class="fader">
+        <input
+          id="instrument-electrodes"
+          type="range"
+          name="electrodes"
+          min="1"
+          max={ELECTRODE_COUNT}
+          step="1"
+          value={ELECTRODE_COUNT}
+        />
+        <output class="readout" for="instrument-electrodes" data-readout="electrodes">
+          {ELECTRODE_COUNT}
+        </output>
+      </div>
+    </div>
+
+    <div class="control">
+      <label class="kicker" for="instrument-spread">
+        {instrument.controls.spread.label}
+      </label>
+      <div class="fader">
+        <input
+          id="instrument-spread"
+          type="range"
+          name="spread"
+          min="0"
+          max="100"
+          step="1"
+          value="38"
+          aria-valuetext={instrument.controls.spread.narrow}
+        />
+        <output class="readout" for="instrument-spread" data-readout="spread">
+          {instrument.controls.spread.narrow}
+        </output>
+      </div>
+    </div>
+
+    <div class="control nerve" role="radiogroup" aria-labelledby="instrument-nerve">
+      <p class="kicker" id="instrument-nerve">
+        {instrument.controls.nerve.label}
+      </p>
+      <div class="switch">
+        <label>
+          <input type="radio" name="nerve" value="full" />
+          <span>{instrument.controls.nerve.full}</span>
+        </label>
+        <label>
+          <input type="radio" name="nerve" value="a" checked />
+          <span>{instrument.controls.nerve.a}</span>
+        </label>
+        <label>
+          <input type="radio" name="nerve" value="b" />
+          <span>{instrument.controls.nerve.b}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="control source" role="group" aria-labelledby="instrument-source">
+      <p class="kicker" id="instrument-source">
+        {instrument.controls.source.label}
+      </p>
+      <div class="buttons">
+        <button class="key" type="button" data-source="sentence" aria-pressed="true">
+          {instrument.controls.source.sentence}
+        </button>
+        <button class="key record-key" type="button" data-source="voice" aria-pressed="false">
+          <span class="lamp" aria-hidden="true"></span>
+          <span data-voice-label>{instrument.controls.source.voice}</span>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div class="note">
+    <p class="kicker">{instrument.note.label}</p>
+    <p>{instrument.note.text}</p>
+    <p>{instrument.note.transcript}</p>
+  </div>
+
+  <script
+    type="application/json"
+    data-instrument-copy
+    set:html={JSON.stringify({
+      play: instrument.play,
+      stop: instrument.stop,
+      flip: instrument.flip,
+      prompts: instrument.prompts,
+      record: instrument.record,
+      spread: instrument.controls.spread,
+      source: instrument.controls.source,
+      sample: instrument.sample,
+    })}
+  />
+</section>
+
+<style>
+  .instrument {
+    /* The faceplate's edge around the glass. */
+    --bezel: clamp(0.5rem, 1.2vw, 0.875rem);
+
+    display: grid;
+    padding: 0 var(--bezel);
+  }
+
+  /* ── The screen ───────────────────────────────────────────────────────────────────────── */
+
+  .glass {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto auto auto;
+    overflow: hidden;
+    border-radius: var(--radius-screen);
+    box-shadow: var(--shadow-screen);
+    isolation: isolate;
+  }
+
+  /* Glass: a soft light falling across the top of the tube, and darkness gathering at its rim. */
+  .glass::after {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+    background:
+      radial-gradient(120% 80% at 70% -10%, rgb(255 255 255 / 0.07), transparent 55%),
+      radial-gradient(90% 90% at 50% 50%, transparent 60%, rgb(0 0 0 / 0.55));
+    content: '';
+    pointer-events: none;
+  }
+
+  .layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .live {
+    mix-blend-mode: screen;
+  }
+
+  /* The display fades in over its still once it is drawing. */
+  @media (scripting: enabled) {
+    .layer {
+      opacity: 0;
+      transition: opacity var(--duration-slow) var(--ease-out);
+    }
+
+    .instrument[data-ready] .layer {
+      opacity: 1;
+    }
+
+    .instrument[data-ready] .still {
+      opacity: 0;
+    }
+  }
+
+  .still {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transition: opacity var(--duration-slow) var(--ease-out);
+  }
+
+  .still * {
+    fill: none;
+    stroke: var(--color-text);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .still-fibers {
+    opacity: 0.16;
+  }
+
+  .still-membrane {
+    opacity: 0.32;
+  }
+
+  .still-array {
+    opacity: 0.5;
+  }
+
+  .still circle {
+    fill: var(--color-signal);
+    stroke: none;
+    opacity: 0.6;
+  }
+
+  /* Where the cochlea is drawn (`display.ts` frames it in this box). */
+  .focus {
+    grid-row: 1;
+    width: 100%;
+    aspect-ratio: 1;
+    max-height: 52svh;
+  }
+
+  .instrument[data-over-nerve] .glass {
+    cursor: crosshair;
+  }
+
+  .copy {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: var(--space-4);
+    align-content: end;
+    padding: 0 var(--space-5) var(--space-5);
+  }
+
+  /* The words arrive one after another as the page opens. */
+  @media (prefers-reduced-motion: no-preference) {
+    .copy > * {
+      animation: rise var(--duration-reveal) var(--ease-out) both;
+    }
+
+    .copy > :nth-child(2) {
+      animation-delay: 90ms;
+    }
+
+    .copy > :nth-child(3) {
+      animation-delay: 180ms;
+    }
+
+    .copy > :nth-child(4) {
+      animation-delay: 420ms;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(1.25rem);
+    }
+  }
+
+  h1 {
+    font-family: var(--font-body);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-strong);
+    font-stretch: 92%;
+    line-height: var(--leading-tight);
+    letter-spacing: 0;
+  }
+
+  .identity {
+    order: -1;
+  }
+
+  /* Narrow screens: role and affiliation on a line each, without the slash between them. */
+  .identity .kicker-part {
+    display: block;
+  }
+
+  .identity .kicker-part::before {
+    content: none;
+  }
+
+  .statement {
+    max-width: 21ch;
+    color: var(--color-text-muted);
+    font-family: var(--font-display);
+    /* Grows with the window's width, held back on short windows so the screen fits them. */
+    font-size: clamp(1.75rem, min(0.5rem + 3.3vw, 1rem + 5vh), 4.25rem);
+    font-weight: 340;
+    line-height: 1.06;
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+
+  .lead {
+    color: var(--color-text);
+  }
+
+  .transport {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+    min-height: 6.75rem;
+    margin-top: var(--space-3);
+  }
+
+  /* The play key: a lit ring that breathes until it is first pressed. */
+  .play {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    padding: 0;
+    border: 1.5px solid var(--color-accent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    color: var(--color-text);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+
+  .play:hover {
+    background: color-mix(in srgb, var(--color-accent) 34%, transparent);
+  }
+
+  .play:active {
+    transform: scale(0.96);
+  }
+
+  .play::before {
+    position: absolute;
+    inset: -1.5px;
+    border: 1.5px solid var(--color-accent);
+    border-radius: 50%;
+    content: '';
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .instrument[data-state='idle'] .play::before {
+      animation: ring 2.4s var(--ease-out) infinite;
+    }
+  }
+
+  @keyframes ring {
+    0% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.7);
+    }
+  }
+
+  /* A triangle while stopped, a square while playing. */
+  .play-icon {
+    width: 1.125rem;
+    height: 1.25rem;
+    margin-left: 0.2rem;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+
+  .instrument[data-state='playing'] .play-icon {
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0;
+    clip-path: none;
+  }
+
+  .instrument[data-state='loading'] .play-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: 0;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    background: none;
+    clip-path: none;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .prompt {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+    max-width: 30ch;
+    line-height: var(--leading-snug);
+  }
+
+  .prompt p {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  /* The switch between the two ways of listening, repeated where the eyes already are. */
+  .flip {
+    min-height: 2.25rem;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+    background: none;
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .flip:hover {
+    border-color: var(--color-text);
+    background: color-mix(in srgb, var(--color-text) 12%, transparent);
+  }
+
+  .prompt-title {
+    font-weight: var(--weight-strong);
+  }
+
+  .prompt-text {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .legend {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    margin: 0;
+    padding: 0 var(--space-5) var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    list-style: none;
+  }
+
+  .legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .legend li::before {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--swatch);
+    box-shadow: 0 0 0.6rem var(--swatch);
+    content: '';
+  }
+
+  .legend .signal {
+    --swatch: var(--color-signal);
+  }
+
+  .legend .spike {
+    --swatch: var(--color-spike);
+  }
+
+  /* A healthy ear has no implant, so no current to name. */
+  .instrument:not([data-paint]) .legend .signal {
+    display: none;
+  }
+
+  /* The record along the foot of the screen. */
+  .record {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: center;
+    height: 4.25rem;
+    padding: 0 var(--space-5);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .record-label {
+    width: 6.5rem;
+  }
+
+  /* Ruled like chart paper until the record starts to write. */
+  .strip {
+    width: 100%;
+    height: 3rem;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(100% / 11 - 1px),
+      color-mix(in srgb, var(--color-text) 9%, transparent) calc(100% / 11 - 1px) calc(100% / 11)
+    );
+  }
+
+  /* ── The deck: controls on the faceplate ──────────────────────────────────────────────── */
+
+  .deck {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding-top: var(--space-2);
+  }
+
+  .control {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    min-width: 0;
+    padding: var(--space-4) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .control .kicker {
+    color: var(--color-text);
+  }
+
+  .listen,
+  .nerve,
+  .source {
+    grid-column: 1 / -1;
+  }
+
+  /* A switch: one lit position among two or three. */
+  .switch,
+  .buttons {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radius-full);
+    background: var(--color-sunken);
+    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-text) 14%, transparent);
+  }
+
+  .switch label {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .switch input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .switch span,
+  .key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.25rem;
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-full);
+    background: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  .key {
+    flex: 1;
+    cursor: pointer;
+  }
+
+  .switch label:hover span,
+  .key:hover {
+    color: var(--color-text);
+  }
+
+  .switch input:checked + span,
+  .key[aria-pressed='true'] {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .switch input:focus-visible + span {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .lamp {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+
+  .record-key[data-recording] {
+    background: var(--color-accent);
+    color: #ffffff;
+  }
+
+  .record-key[data-recording] .lamp {
+    background: #ffffff;
+    animation: blink 1s steps(2, start) infinite;
+  }
+
+  @keyframes blink {
+    to {
+      visibility: hidden;
+    }
+  }
+
+  /* A fader: a slot with a scale behind it and a cap to slide. */
+  .fader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: center;
+    min-height: 2.25rem;
+  }
+
+  .fader output {
+    min-width: 3.25rem;
+    font-size: var(--text-xs);
+    text-align: right;
+  }
+
+  .fader input {
+    width: 100%;
+    height: 2.25rem;
+    margin: 0;
+    background:
+      linear-gradient(var(--color-text), var(--color-text)) center / 100% 2px no-repeat,
+      repeating-linear-gradient(
+          to right,
+          var(--color-border-strong) 0 1px,
+          transparent 1px calc((100% - 1px) / 10)
+        )
+        center / 100% 0.875rem no-repeat;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .fader input::-webkit-slider-thumb {
+    width: 0.875rem;
+    height: 1.75rem;
+    border: 0;
+    border-radius: 3px;
+    background:
+      linear-gradient(var(--color-accent), var(--color-accent)) center / 100% 2px no-repeat,
+      var(--color-text);
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text) 35%, transparent);
+    appearance: none;
+  }
+
+  .fader input::-moz-range-thumb {
+    width: 0.875rem;
+    height: 1.75rem;
+    border: 0;
+    border-radius: 3px;
+    background:
+      linear-gradient(var(--color-accent), var(--color-accent)) center / 100% 2px no-repeat,
+      var(--color-text);
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text) 35%, transparent);
+  }
+
+  /* The fine print, in the margin under the controls. */
+  .note {
+    display: grid;
+    gap: var(--space-2) var(--space-6);
+    padding: var(--space-4) var(--space-3) 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+  }
+
+  .note .kicker {
+    color: var(--color-text);
+  }
+
+  .note p:not(.kicker) {
+    max-width: 68ch;
+  }
+
+  /* Without scripts the instrument cannot play: the screen stays, the controls go. */
+  @media (scripting: none) {
+    .deck,
+    .transport,
+    .legend,
+    .record,
+    .note {
+      display: none;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .deck {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .control {
+      padding: var(--space-4) var(--space-4);
+      border-right: 1px solid var(--color-border);
+    }
+
+    .control,
+    .listen,
+    .nerve,
+    .source {
+      grid-column: span 2;
+    }
+
+    .nerve,
+    .source {
+      grid-column: span 3;
+    }
+
+    .control:nth-child(3),
+    .control:last-child {
+      border-right: 0;
+    }
+  }
+
+  /* Wide screens: the screen fills the window above the deck, text at the left, cochlea right. */
+  @media (min-width: 64rem) {
+    .glass {
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+      grid-template-rows: 1fr auto;
+      /* The window below the header, less the deck; taller when the words need the room. */
+      min-height: max(33rem, min(100svh - var(--header-height) - 7.25rem, 58rem));
+    }
+
+    .focus {
+      grid-area: 1 / 2;
+      max-height: none;
+      aspect-ratio: auto;
+    }
+
+    .identity .kicker-part {
+      display: inline;
+    }
+
+    .identity .kicker-part::before {
+      content: '/';
+    }
+
+    .copy {
+      grid-area: 1 / 1;
+      gap: var(--space-5);
+      align-content: center;
+      padding: var(--space-6) 0 var(--space-6) clamp(var(--space-6), 4vw, var(--space-8));
+    }
+
+    .legend {
+      position: absolute;
+      right: var(--space-6);
+      bottom: calc(4.25rem + var(--space-4));
+      padding: 0;
+    }
+
+    .record {
+      grid-column: 1 / -1;
+      padding-inline: clamp(var(--space-6), 4vw, var(--space-8)) var(--space-6);
+    }
+
+    .note {
+      grid-template-columns: 8rem minmax(0, 1.4fr) minmax(0, 1fr);
+      padding-top: var(--space-5);
+    }
+  }
+
+  /* Roomy screens: the whole deck in one row (the screen's height above allows for it). */
+  @media (min-width: 80rem) {
+    .deck {
+      grid-template-columns: 1.15fr 1fr 1fr 1.5fr 1.15fr;
+    }
+
+    .control,
+    .listen,
+    .nerve,
+    .source {
+      grid-column: auto;
+      padding: var(--space-4) var(--space-5);
+      border-right: 1px solid var(--color-border);
+      border-bottom: 0;
+    }
+
+    .control:nth-child(3) {
+      border-right: 1px solid var(--color-border);
+    }
+
+    .control:first-child {
+      padding-left: var(--space-3);
+    }
+
+    .control:last-child {
+      padding-right: var(--space-3);
+      border-right: 0;
+    }
+  }
+
+  @media print {
+    .instrument {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import type { Engine, ListeningMode } from '@/instrument/engine';
+  import { Display, type DisplaySettings } from '@/instrument/display';
+  import { NERVES, SURVIVAL_SAMPLES, type NerveName } from '@/instrument/model';
+
+  interface Prompt {
+    title: string;
+    text: string;
+  }
+
+  interface Copy {
+    play: string;
+    stop: string;
+    flip: Record<ListeningMode, string>;
+    prompts: Record<'idle' | 'implant' | 'natural' | 'again' | 'unavailable', Prompt>;
+    record: Record<ListeningMode, string>;
+    spread: { narrow: string; medium: string; wide: string };
+    source: { voice: string; recording: string; denied: string };
+    sample: string;
+  }
+
+  /** How wide a stretch of nerve one pass of the pointer thins, as a fraction of the spiral. */
+  const BRUSH_WIDTH = 0.014;
+
+  const root = document.querySelector<HTMLElement>('[data-instrument]');
+  if (root) setUp(root);
+
+  function setUp(root: HTMLElement) {
+    const find = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
+    const copy = JSON.parse(find('[data-instrument-copy]').textContent ?? '{}') as Copy;
+    const screen = find('[data-screen]');
+    const deck = find<HTMLFormElement>('[data-deck]');
+    const playButton = find<HTMLButtonElement>('[data-play]');
+    const voiceButton = find<HTMLButtonElement>('[data-source="voice"]');
+    const sentenceButton = find<HTMLButtonElement>('[data-source="sentence"]');
+    const voiceLabel = find('[data-voice-label]');
+    const flipButton = find<HTMLButtonElement>('[data-flip]');
+
+    const field = (name: string) => deck.elements.namedItem(name) as HTMLInputElement;
+    const modeRadio = (mode: ListeningMode) =>
+      deck.querySelector<HTMLInputElement>(`input[name="mode"][value="${mode}"]`)!;
+
+    const settings: DisplaySettings = {
+      mode: 'implant',
+      electrodes: Number(field('electrodes').value),
+      spread: Number(field('spread').value) / 100,
+      survival: NERVES.a(),
+    };
+
+    const display = new Display(
+      screen,
+      {
+        base: find<HTMLCanvasElement>('[data-layer="base"]'),
+        live: find<HTMLCanvasElement>('[data-layer="live"]'),
+        strip: find<HTMLCanvasElement>('[data-layer="strip"]'),
+      },
+      find('[data-focus]'),
+      settings,
+    );
+
+    root.toggleAttribute('data-ready', true);
+
+    let engine: Engine | null = null;
+    let heardBoth = false;
+    let finishRecording: (() => void) | null = null;
+
+    const apply = () => {
+      display.update({ ...settings });
+      engine?.configure(settings);
+      engine?.setMode(settings.mode);
+      root.toggleAttribute('data-paint', settings.mode === 'implant');
+      // The flip key names the way of listening it would switch to.
+      find('[data-flip-label]').textContent =
+        copy.flip[settings.mode === 'implant' ? 'natural' : 'implant'];
+      find('[data-record-label]').textContent = copy.record[settings.mode];
+      const word =
+        settings.spread < 0.34
+          ? copy.spread.narrow
+          : settings.spread < 0.67
+            ? copy.spread.medium
+            : copy.spread.wide;
+      find('[data-readout="spread"]').textContent = word;
+      field('spread').setAttribute('aria-valuetext', word);
+      find('[data-readout="electrodes"]').textContent = String(settings.electrodes);
+    };
+
+    const prompt = (key: keyof Copy['prompts']) => {
+      find('[data-prompt-title]').textContent = copy.prompts[key].title;
+      find('[data-prompt-text]').textContent = copy.prompts[key].text;
+    };
+
+    const setState = (state: 'idle' | 'loading' | 'playing' | 'stopped') => {
+      root.dataset.state = state;
+      const playing = state === 'playing';
+      playButton.setAttribute('aria-pressed', String(playing));
+      find('[data-play-label]').textContent = playing ? copy.stop : copy.play;
+      if (playing) prompt(heardBoth ? 'again' : settings.mode);
+      if (state !== 'idle') flipButton.hidden = false;
+      display.wake();
+    };
+
+    /**
+     * Opens the sound output. Browsers only allow this in answer to a click or key press, and
+     * some only in the very moment of it, so this runs before anything is awaited: before the
+     * engine's code has even been downloaded.
+     */
+    const openOutput = (): AudioContext => {
+      // On iPhones, play through the silent switch, as a video would: the visitor pressed play.
+      const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+      if (session) session.type = 'playback';
+      const context = new AudioContext({ latencyHint: 'interactive' });
+      void context.resume();
+      return context;
+    };
+
+    /** The engine, built on first use. Call it straight from a click or key press. */
+    let opening: Promise<Engine> | null = null;
+    const ready = (): Promise<Engine> => {
+      opening ??= (async () => {
+        const context = openOutput();
+        const { Engine } = await import('@/instrument/engine');
+        const created = await Engine.create(context);
+        created.configure(settings);
+        created.setMode(settings.mode);
+        display.setEngine(created);
+        engine = created;
+        return created;
+      })();
+      return opening;
+    };
+
+    const play = async () => {
+      setState('loading');
+      try {
+        const audio = await ready();
+        if (!audio.hasRecording) await audio.load(copy.sample);
+        await audio.play();
+        setState('playing');
+      } catch (error) {
+        console.error('The instrument could not start.', error);
+        setState('stopped');
+        prompt('unavailable');
+      }
+    };
+
+    // Out of sight, out of earshot: the loop stops once the instrument has scrolled away.
+    new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting || !engine?.playing) return;
+      engine.stop();
+      setState('stopped');
+    }).observe(root);
+
+    playButton.addEventListener('click', () => {
+      if (engine?.playing) {
+        engine.stop();
+        setState('stopped');
+      } else if (root.dataset.state !== 'loading') {
+        void play();
+      }
+    });
+
+    // The deck: every control writes into `settings`, then everything follows from them.
+    const listenAs = (mode: ListeningMode) => {
+      settings.mode = mode;
+      modeRadio(mode).checked = true;
+      if (engine?.playing) {
+        heardBoth = true;
+        prompt(mode === 'natural' ? 'natural' : 'again');
+      }
+    };
+
+    flipButton.addEventListener('click', () => {
+      listenAs(settings.mode === 'implant' ? 'natural' : 'implant');
+      apply();
+    });
+
+    deck.addEventListener('input', (event) => {
+      const input = event.target as HTMLInputElement;
+      if (input.name === 'mode') {
+        listenAs(input.value as ListeningMode);
+      } else {
+        if (input.name === 'electrodes') settings.electrodes = Number(input.value);
+        if (input.name === 'spread') settings.spread = Number(input.value) / 100;
+        if (input.name === 'nerve') settings.survival = NERVES[input.value as NerveName]();
+        // These belong to the implant: touching one switches the listening over to it.
+        if (settings.mode !== 'implant') {
+          settings.mode = 'implant';
+          modeRadio('implant').checked = true;
+        }
+      }
+      apply();
+    });
+    deck.addEventListener('submit', (event) => event.preventDefault());
+
+    // Thinning the nerve by hand: drag across it with a mouse or pen, or tap it.
+    const thin = (place: number, strength: number) => {
+      const survival = settings.survival.slice();
+      for (let i = 0; i < SURVIVAL_SAMPLES; i++) {
+        const distance = (i / (SURVIVAL_SAMPLES - 1) - place) / BRUSH_WIDTH;
+        survival[i]! *= 1 - strength * Math.exp(-0.5 * distance * distance);
+      }
+      settings.survival = survival;
+      for (const radio of deck.querySelectorAll<HTMLInputElement>('input[name="nerve"]')) {
+        radio.checked = false;
+      }
+      apply();
+    };
+
+    const onGlass = (event: PointerEvent) =>
+      settings.mode === 'implant' && !(event.target as Element).closest('button, a, input, label');
+
+    const hover = (place: number | null) => {
+      display.setBrush(place);
+      root.toggleAttribute('data-over-nerve', place !== null);
+    };
+
+    screen.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch' || !onGlass(event)) return hover(null);
+      const place = display.placeAt(event.clientX, event.clientY);
+      hover(place);
+      if (place !== null && event.buttons === 1) thin(place, 0.5);
+    });
+    screen.addEventListener('pointerleave', () => hover(null));
+    screen.addEventListener('pointerdown', (event) => {
+      if (!onGlass(event)) return;
+      const place = display.placeAt(event.clientX, event.clientY);
+      if (place !== null) thin(place, event.pointerType === 'touch' ? 0.95 : 0.7);
+    });
+
+    // The sound source: the sample sentence, or a few seconds of the visitor's own voice.
+    const selectSource = (voice: boolean) => {
+      voiceButton.setAttribute('aria-pressed', String(voice));
+      sentenceButton.setAttribute('aria-pressed', String(!voice));
+    };
+
+    sentenceButton.addEventListener('click', async () => {
+      selectSource(false);
+      try {
+        const audio = await ready();
+        await audio.load(copy.sample);
+        if (!audio.playing) await play();
+      } catch (error) {
+        console.error('The sample could not be loaded.', error);
+      }
+    });
+
+    voiceButton.addEventListener('click', async () => {
+      if (finishRecording) return finishRecording();
+      try {
+        const audio = await ready();
+        audio.stop();
+        setState('stopped');
+        await audio.record(
+          (fraction) => {
+            voiceLabel.textContent = `${copy.source.recording} ${Math.ceil((1 - fraction) * 6)}`;
+          },
+          (finish) => {
+            finishRecording = finish;
+            voiceButton.toggleAttribute('data-recording', true);
+          },
+        );
+        selectSource(true);
+        voiceLabel.textContent = copy.source.voice;
+        await play();
+      } catch (error) {
+        console.error('The microphone could not be used.', error);
+        voiceLabel.textContent = copy.source.denied;
+      } finally {
+        finishRecording = null;
+        voiceButton.removeAttribute('data-recording');
+      }
+    });
+
+    apply();
+  }
+</script>

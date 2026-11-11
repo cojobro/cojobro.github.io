@@ -1,0 +1,100 @@
+---
+/**
+ * The research page: the headline, then each current chapter told beside its scene as the reader
+ * scrolls, then earlier work, every publication, and a way to get in touch.
+ */
+import ButtonLink from '@/components/ButtonLink.astro';
+import LinkCard from '@/components/LinkCard.astro';
+import PublicationList from '@/components/PublicationList.astro';
+import ResearchChapter from '@/components/research/ResearchChapter.astro';
+import ResearchHero from '@/components/research/ResearchHero.astro';
+import Section from '@/components/Section.astro';
+import { publications } from '@/data/cv';
+import { researchPage } from '@/data/research';
+import { site } from '@/data/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getOrderedEntries } from '@/lib/content';
+
+const entries = await getOrderedEntries('research');
+const chapters = entries.filter(({ data }) => data.status !== 'earlier');
+const earlier = entries.filter(({ data }) => data.status === 'earlier');
+---
+
+<BaseLayout title="Research" description={researchPage.lede[0]}>
+  <ResearchHero {...researchPage} />
+
+  <div class="story">
+    {chapters.map((entry, index) => (
+      <ResearchChapter entry={entry} index={String(index + 1).padStart(2, '0')} />
+    ))}
+  </div>
+
+  <div class="container closing">
+    {earlier.length > 0 && (
+      <Section id="earlier" title={researchPage.earlierTitle}>
+        <ul class="cards">
+          {earlier.map(({ id, data }) => (
+            <li>
+              <LinkCard
+                href={`/research/${id}/`}
+                title={data.title}
+                description={data.summary}
+                kicker={data.kicker}
+                meta={data.period}
+              />
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )}
+
+    {publications.length > 0 && (
+      <Section id="publications" title={researchPage.publicationsTitle}>
+        <PublicationList publications={publications} />
+      </Section>
+    )}
+
+    <Section id="contact" title={researchPage.contactTitle}>
+      <div class="actions">
+        <ButtonLink href="/cv/" variant="primary" icon="arrow-right">
+          Curriculum vitae
+        </ButtonLink>
+        <ButtonLink href={site.cvPdf} icon="download" download>
+          CV (PDF)
+        </ButtonLink>
+        <ButtonLink href={`mailto:${site.email}`} icon="mail">
+          {site.email}
+        </ButtonLink>
+      </div>
+    </Section>
+  </div>
+</BaseLayout>
+
+<style>
+  .closing {
+    display: grid;
+    gap: var(--space-9);
+    padding-top: var(--space-9);
+  }
+
+  .cards {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  @media (min-width: 48rem) {
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+  }
+</style>
