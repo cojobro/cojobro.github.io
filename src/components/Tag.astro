@@ -1,0 +1,49 @@
+---
+/**
+ * A small pill label: a keyword, a project tag, a publication status. Neutral by default; give it
+ * a meaning tone only where that meaning applies (signal = stimulation, spike = neural firing,
+ * decode = models and decoding).
+ */
+export type TagTone = 'neutral' | 'signal' | 'spike' | 'decode';
+
+interface Props {
+  tone?: TagTone;
+}
+
+const { tone = 'neutral' } = Astro.props;
+---
+
+<span class:list={['tag', tone]}>
+  <slot />
+</span>
+
+<style>
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25em 0.75em;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+  }
+
+  .signal {
+    border-color: color-mix(in srgb, var(--color-signal) 45%, transparent);
+    background: var(--color-signal-soft);
+    color: var(--color-signal);
+  }
+
+  .spike {
+    border-color: color-mix(in srgb, var(--color-spike) 45%, transparent);
+    background: var(--color-spike-soft);
+    color: var(--color-spike);
+  }
+
+  .decode {
+    border-color: color-mix(in srgb, var(--color-decode) 45%, transparent);
+    background: var(--color-decode-soft);
+    color: var(--color-decode);
+  }
+</style>

@@ -1,0 +1,254 @@
+---
+/**
+ * A figure for the home page: the instrument's two example nerves, unrolled side by side under
+ * the same electrode array, so their different gaps can be compared at a glance. Drawn at build
+ * time from `src/instrument/model.ts`, the same description the instrument plays; static SVG.
+ */
+import { problem } from '@/data/home';
+import {
+  ELECTRODE_COUNT,
+  NERVES,
+  placeOnArray,
+  seededRandom,
+  survivalAt,
+  type NerveName,
+} from '@/instrument/model';
+
+const { figure } = problem;
+
+/** Drawing units: the array runs from `LEFT` to `RIGHT`; fibers hang below the contacts. */
+const WIDTH = 1000;
+const HEIGHT = 132;
+const LEFT = 18;
+const RIGHT = WIDTH - 18;
+const CONTACT_Y = 16;
+const MEMBRANE_Y = 42;
+const FIBERS = 230;
+/** Below this share of surviving fibers a stretch of nerve counts as a gap. */
+const GAP_BELOW = 0.3;
+
+const xAt = (position: number) => LEFT + (RIGHT - LEFT) * position;
+
+function draw(name: Exclude<NerveName, 'full'>) {
+  const survival = NERVES[name]();
+  const random = seededRandom(name === 'a' ? 7 : 11);
+  let fibers = '';
+  for (let i = 0; i < FIBERS; i++) {
+    const position = (i + 0.5) / FIBERS;
+    const alive = random() < survivalAt(survival, placeOnArray(position));
+    const length = 44 + 26 * random();
+    const lean = (random() - 0.5) * 5;
+    if (!alive) continue;
+    const x = xAt(position);
+    fibers += `M${x.toFixed(1)},${MEMBRANE_Y}L${(x + lean).toFixed(1)},${(MEMBRANE_Y + length).toFixed(1)}`;
+  }
+
+  // Stretches of the array with few surviving fibers, as [from, to] positions.
+  const gaps: [number, number][] = [];
+  let start: number | null = null;
+  for (let step = 0; step <= 200; step++) {
+    const position = step / 200;
+    const bare = survivalAt(survival, placeOnArray(position)) < GAP_BELOW;
+    if (bare && start === null) start = position;
+    if ((!bare || step === 200) && start !== null) {
+      gaps.push([start, position]);
+      start = null;
+    }
+  }
+  return { name, fibers, gaps };
+}
+
+const people = [draw('a'), draw('b')];
+const contacts = Array.from({ length: ELECTRODE_COUNT }, (_, index) =>
+  xAt(index / (ELECTRODE_COUNT - 1)),
+);
+---
+
+<figure class="nerve-pair">
+  <div class="rows">
+    {people.map(({ name, fibers, gaps }) => (
+      <div class="row">
+        <p class="who kicker">{figure.people[name]}</p>
+        <svg
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          role="img"
+          aria-label={`${figure.people[name]}: ${gaps.length} stretches of nerve where ${figure.gap}.`}
+        >
+          <line class="carrier" x1={LEFT - 10} y1={CONTACT_Y} x2={RIGHT + 10} y2={CONTACT_Y} />
+          {contacts.map((x) => (
+            <circle class="contact" cx={x} cy={CONTACT_Y} r="6" />
+          ))}
+          <line class="membrane" x1={LEFT} y1={MEMBRANE_Y} x2={RIGHT} y2={MEMBRANE_Y} />
+          <path class="fibers" d={fibers} />
+          {gaps.map(([from, to]) => (
+            <path
+              class="gap"
+              d={`M${xAt(from)},${MEMBRANE_Y + 10}v-5H${xAt(to)}v5`}
+              transform={`translate(0 ${HEIGHT - MEMBRANE_Y - 18})`}
+            />
+          ))}
+        </svg>
+      </div>
+    ))}
+  </div>
+  <div class="axis kicker" aria-hidden="true">
+    <span>{figure.base}</span>
+    <span class="key">
+      <span class="key-contact">{figure.electrodes}</span>
+      <span class="key-fiber">{figure.fibers}</span>
+      <span class="key-gap">{figure.gap}</span>
+    </span>
+    <span>{figure.apex}</span>
+  </div>
+  <figcaption>
+    <strong>{figure.title}.</strong> {figure.caption}
+  </figcaption>
+</figure>
+
+<style>
+  .nerve-pair {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .rows {
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-surface);
+  }
+
+  .row {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .who {
+    color: var(--color-text);
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  svg * {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .carrier {
+    stroke: var(--color-border-strong);
+    stroke-width: 1;
+  }
+
+  .contact {
+    fill: var(--color-signal);
+  }
+
+  .membrane {
+    stroke: var(--color-text);
+    stroke-width: 1.25;
+  }
+
+  .fibers {
+    fill: none;
+    stroke: var(--color-text);
+    stroke-width: 1;
+    stroke-linecap: round;
+    opacity: 0.72;
+  }
+
+  .gap {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 1.5;
+  }
+
+  .axis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    justify-content: space-between;
+    padding-inline: var(--space-4);
+  }
+
+  .key {
+    display: none;
+    gap: var(--space-5);
+  }
+
+  .key span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .key span::before {
+    width: 0.5rem;
+    height: 0.5rem;
+    content: '';
+  }
+
+  .key-contact::before {
+    border-radius: 50%;
+    background: var(--color-signal);
+  }
+
+  .key-fiber::before {
+    width: 1px !important;
+    height: 0.75rem !important;
+    background: var(--color-text);
+  }
+
+  .key-gap::before {
+    height: 0.3rem !important;
+    border: 1.5px solid var(--color-accent);
+    border-top: 0;
+  }
+
+  figcaption {
+    max-width: var(--width-prose);
+    padding-inline: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+  }
+
+  figcaption strong {
+    color: var(--color-text);
+  }
+
+  @media (min-width: 48rem) {
+    .rows {
+      padding: var(--space-6);
+    }
+
+    .row {
+      grid-template-columns: 6rem minmax(0, 1fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+
+    .who {
+      padding-top: 0.35rem;
+    }
+
+    .axis,
+    figcaption {
+      padding-inline: var(--space-6);
+    }
+
+    .axis {
+      padding-left: calc(var(--space-6) + 6rem + var(--space-4));
+    }
+
+    .key {
+      display: inline-flex;
+    }
+  }
+</style>

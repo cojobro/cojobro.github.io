@@ -1,0 +1,39 @@
+---
+/**
+ * A small line icon drawn in the current text color, 1em square. Decorative: the link or button
+ * around it carries the words.
+ */
+const paths = {
+  'arrow-right': 'M5 12h14M13 6l6 6-6 6',
+  'arrow-up-right': 'M7 17 17 7M8 7h9v9',
+  'arrow-left': 'M19 12H5M11 18l-6-6 6-6',
+  download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
+  mail: 'M4 6h16v12H4zM4 7l8 6 8-6',
+  document: 'M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5',
+} as const;
+
+export type IconName = keyof typeof paths;
+
+interface Props {
+  name: IconName;
+}
+
+const { name } = Astro.props;
+---
+
+<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path d={paths[name]}></path>
+</svg>
+
+<style>
+  .icon {
+    flex: none;
+    width: 1em;
+    height: 1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>

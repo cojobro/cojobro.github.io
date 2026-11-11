@@ -1,0 +1,153 @@
+---
+/**
+ * A list of publications, title first, with the site owner's name highlighted and a badge on
+ * work that is not yet published. Used by the CV page and the research pages.
+ *
+ * The year column is 4.5rem wide on larger screens; set `--publication-year-width` on an
+ * ancestor to align it with other lists (the CV page uses `--width-date-column`).
+ */
+import Icon from '@/components/Icon.astro';
+import Tag from '@/components/Tag.astro';
+import type { Publication, PublicationStatus } from '@/data/types';
+import { isOwnName } from '@/lib/publications';
+
+interface Props {
+  publications: Publication[];
+}
+
+const { publications } = Astro.props;
+
+const statusLabels: Record<Exclude<PublicationStatus, 'published'>, string> = {
+  accepted: 'Accepted',
+  submitted: 'Submitted',
+  'in-preparation': 'In preparation',
+};
+---
+
+<ol class="publications">
+  {publications.map(({ authors, title, venue, year, status, doi, url, note }) => (
+    <li class="publication">
+      <p class="year readout">{year}</p>
+      <div class="body">
+        <p class="title">
+          <cite>{title}</cite>
+        </p>
+        <p class="authors">
+          {authors.map((author, index) => (
+            <>
+              {index > 0 && ', '}
+              {isOwnName(author) ? <strong>{author}</strong> : author}
+            </>
+          ))}
+        </p>
+        <p class="venue">
+          <em>{venue}</em>
+          {note && <span class="note"> · {note}</span>}
+        </p>
+        {(status !== 'published' || doi || url) && (
+          <p class="extras">
+            {status !== 'published' && <Tag>{statusLabels[status]}</Tag>}
+            {doi && (
+              <a class="doi" href={`https://doi.org/${doi}`}>
+                doi:{doi}
+              </a>
+            )}
+            {!doi && url && (
+              <a class="link" href={url}>
+                Read online <Icon name="arrow-up-right" />
+              </a>
+            )}
+          </p>
+        )}
+      </div>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .publications {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .publication {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: var(--space-3);
+    break-inside: avoid;
+  }
+
+  .year {
+    padding-top: 0.25em;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .body {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  cite {
+    font-style: normal;
+  }
+
+  .authors,
+  .venue {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .authors strong {
+    color: var(--color-text);
+  }
+
+  .extras {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-1);
+  }
+
+  .doi {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
+
+  .link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  @media (min-width: 40rem), print {
+    .publication {
+      grid-template-columns: var(--publication-year-width, 4.5rem) minmax(0, 1fr);
+      gap: var(--space-5);
+    }
+  }
+
+  /* Plain blocks on paper: Chromium can overlap grid items that avoid page breaks. */
+  @media print {
+    .publications {
+      display: block;
+    }
+
+    .publication {
+      margin-bottom: var(--space-4);
+    }
+  }
+</style>

@@ -1,0 +1,116 @@
+---
+/**
+ * A card leading to another page: a kicker, the title, a short description and an arrow. The
+ * whole card is clickable, but only the title is the link, so screen readers hear a short name.
+ * The title is an `h3`: put cards under a section's `h2`.
+ */
+import Icon from '@/components/Icon.astro';
+
+interface Props {
+  href: string;
+  title: string;
+  /** One or two sentences under the title. */
+  description: string;
+  /** Small label above the title, e.g. "Digital health". */
+  kicker: string;
+  /** A second part of the kicker, e.g. a period. */
+  meta?: string;
+}
+
+const { href, title, description, kicker, meta } = Astro.props;
+---
+
+<article class="card">
+  <p class="kicker">
+    {kicker}
+    {meta && <span class="kicker-part">{meta}</span>}
+  </p>
+  <h3>
+    <a href={href}>{title}</a>
+  </h3>
+  <p class="description">{description}</p>
+  <span class="arrow">
+    <Icon name="arrow-right" />
+  </span>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    height: 100%;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-surface);
+    transition:
+      border-color var(--duration-base) var(--ease-out),
+      background-color var(--duration-base) var(--ease-out);
+  }
+
+  .card:hover {
+    border-color: var(--color-text);
+    background: var(--color-surface-raised);
+  }
+
+  /* The focus ring belongs to the whole card, since the whole card is the target. */
+  .card:has(a:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  h3 {
+    font-size: var(--text-2xl);
+    line-height: 1.05;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: inherit;
+  }
+
+  a:focus-visible {
+    outline: none;
+  }
+
+  /* Stretch the link over the card. */
+  a::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    content: '';
+  }
+
+  .description {
+    max-width: 46ch;
+    color: var(--color-text-muted);
+    line-height: var(--leading-snug);
+  }
+
+  .arrow {
+    display: inline-flex;
+    margin-top: auto;
+    padding-top: var(--space-3);
+    font-size: 1.375rem;
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      color var(--duration-base) var(--ease-out);
+  }
+
+  .card:hover .arrow {
+    color: var(--color-accent);
+    transform: translateX(0.3rem);
+  }
+
+  @media (min-width: 48rem) {
+    .card {
+      padding: var(--space-6);
+    }
+  }
+</style>

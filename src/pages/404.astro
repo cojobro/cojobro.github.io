@@ -1,0 +1,104 @@
+---
+/**
+ * The not-found page: a screen showing no signal (the snow of an untuned tube television), a
+ * short apology, the way home and the main branches. The snow is the page's only script; without
+ * it, or for visitors who prefer reduced motion, the screen holds a still.
+ */
+import ButtonLink from '@/components/ButtonLink.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import { nav } from '@/data/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found">
+  <div class="container not-found">
+    <PageHeader title="No signal" kicker="Error 404">
+      <p>This page isn’t here. The address may be mistyped, or the page may have moved.</p>
+      <Fragment slot="actions">
+        <ButtonLink href="/" variant="primary" icon="arrow-right">
+          Go to the home page
+        </ButtonLink>
+        {nav.map(({ label, href }) => (
+          <ButtonLink href={href}>{label}</ButtonLink>
+        ))}
+      </Fragment>
+    </PageHeader>
+    <div class="screen glass" aria-hidden="true">
+      <canvas data-snow width="160" height="120"></canvas>
+      <p class="readout">CH 404</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: grid;
+    gap: var(--space-6);
+    align-items: center;
+  }
+
+  .glass {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    /* The bulge of a picture tube. */
+    border-radius: 12% / 14%;
+    box-shadow: var(--shadow-screen);
+  }
+
+  .glass::after {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(90% 90% at 50% 50%, transparent 45%, rgb(0 0 0 / 0.75));
+    content: '';
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    opacity: 0.55;
+  }
+
+  .readout {
+    position: absolute;
+    top: 9%;
+    right: 11%;
+    z-index: 1;
+    color: var(--color-spike);
+    font-size: var(--text-lg);
+    text-shadow: 0 0 0.6rem var(--color-spike);
+  }
+
+  @media (min-width: 48rem) {
+    .not-found {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: var(--space-8);
+      min-height: 70vh;
+    }
+  }
+</style>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-snow]');
+  const context = canvas?.getContext('2d');
+  if (canvas && context) {
+    const image = context.createImageData(canvas.width, canvas.height);
+    const pixels = new Uint32Array(image.data.buffer);
+    const draw = () => {
+      for (let i = 0; i < pixels.length; i++) {
+        const gray = (Math.random() * 255) | 0;
+        pixels[i] = 0xff000000 | (gray << 16) | (gray << 8) | gray;
+      }
+      context.putImageData(image, 0, 0);
+    };
+    draw();
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Fresh snow about 18 times a second, only while the tab is in front.
+      window.setInterval(() => {
+        if (!document.hidden) draw();
+      }, 55);
+    }
+  }
+</script>

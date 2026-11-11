@@ -1,0 +1,60 @@
+---
+/**
+ * A heading with an optional kicker (a small legend) above it, grouped in an <hgroup>: level 1
+ * for a page title (see PageHeader), 2 for a section (see Section).
+ */
+interface Props {
+  title: string;
+  kicker?: string;
+  level?: 1 | 2;
+  /** id of the heading element, for `aria-labelledby` and in-page links. */
+  id?: string;
+}
+
+const { title, kicker, level = 2, id } = Astro.props;
+const Heading = `h${level}` as const;
+---
+
+<hgroup class:list={['section-heading', `level-${level}`]}>
+  {kicker && <p class="kicker">{kicker}</p>}
+  <Heading id={id}>{title}</Heading>
+</hgroup>
+
+<style>
+  .section-heading {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  /* A rule across the top, as over every section of the faceplate. */
+  .level-2 {
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-text);
+  }
+
+  .kicker {
+    color: var(--color-text);
+  }
+
+  .level-1 h1 {
+    font-size: var(--text-display);
+    font-weight: 330;
+    line-height: var(--leading-display);
+    letter-spacing: -0.03em;
+  }
+
+  .level-2 h2 {
+    font-size: var(--text-3xl);
+    line-height: 1.02;
+  }
+
+  @media print {
+    .section-heading {
+      margin-bottom: var(--space-5);
+    }
+
+    .level-2 {
+      border-top-color: var(--color-border-strong);
+    }
+  }
+</style>

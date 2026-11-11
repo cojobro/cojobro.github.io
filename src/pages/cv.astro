@@ -1,0 +1,208 @@
+---
+/** The CV: every list in `src/data/cv.ts`, with section links and a print layout. No scripts. */
+import ButtonLink from '@/components/ButtonLink.astro';
+import ContributionList from '@/components/ContributionList.astro';
+import CvEntry from '@/components/CvEntry.astro';
+import CvGroup from '@/components/CvGroup.astro';
+import OnThisPage from '@/components/OnThisPage.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import PublicationList from '@/components/PublicationList.astro';
+import Section from '@/components/Section.astro';
+import SkillList from '@/components/SkillList.astro';
+import { contributions, education, honors, positions, publications, skills } from '@/data/cv';
+import { profiles, site } from '@/data/site';
+import type { PositionKind, PublicationKind } from '@/data/types';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { groupByKind } from '@/lib/grouping';
+
+const positionTitles: Record<PositionKind, string> = {
+  research: 'Research',
+  teaching: 'Teaching',
+  clinical: 'Clinical',
+  other: 'Other',
+};
+
+const publicationTitles: Record<PublicationKind, string> = {
+  journal: 'Journal articles',
+  conference: 'Conference papers',
+  poster: 'Posters',
+  presentation: 'Presentations',
+};
+
+const positionGroups = groupByKind(positions, positionTitles);
+const publicationGroups = groupByKind(publications, publicationTitles);
+
+/** Section anchors and titles, in page order. A section with an empty list is left out. */
+const sections = {
+  education: { label: 'Education', count: education.length },
+  experience: { label: 'Experience', count: positions.length },
+  honors: { label: 'Honors and awards', count: honors.length },
+  publications: { label: 'Publications', count: publications.length },
+  contributions: { label: 'Research contributions', count: contributions.length },
+  skills: { label: 'Skills', count: skills.length },
+};
+const toc = Object.entries(sections)
+  .filter(([, { count }]) => count > 0)
+  .map(([id, { label }]) => ({ label, href: `#${id}` }));
+
+const siteHost = Astro.site?.host;
+const orcid = profiles.find((profile) => profile.label === 'ORCID');
+---
+
+<BaseLayout
+  title="CV"
+  description={`Curriculum vitae of ${site.name}: education, research, publications and awards.`}
+>
+  <div class="container">
+    <PageHeader title={site.name} kicker="Curriculum vitae">
+      <p>
+        {site.role}, {site.affiliation}
+      </p>
+      <p class="contact">
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+        <span>{site.location}</span>
+        {siteHost && <a href="/">{siteHost}</a>}
+        {orcid && <a href={orcid.href}>ORCID {orcid.handle}</a>}
+      </p>
+      <ButtonLink slot="actions" href={site.cvPdf} variant="primary" icon="download" download>
+        Download PDF
+      </ButtonLink>
+    </PageHeader>
+
+    <div class="layout">
+      <aside class="aside">
+        <OnThisPage items={toc} />
+      </aside>
+
+      <div class="sections">
+        {sections.education.count > 0 && (
+          <Section id="education" title={sections.education.label}>
+            <div class="entries">
+              {education.map(({ degree, institution, location, period, details }) => (
+                <CvEntry
+                  title={degree}
+                  organization={institution}
+                  location={location}
+                  period={period}
+                  items={details}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {sections.experience.count > 0 && (
+          <Section id="experience" title={sections.experience.label}>
+            {positionGroups.map(({ title, items }) => (
+              <CvGroup title={title}>
+                {items.map((position) => (
+                  <CvEntry
+                    level={4}
+                    title={position.title}
+                    organization={position.organization}
+                    group={position.group}
+                    url={position.url}
+                    location={position.location}
+                    period={position.period}
+                    items={position.highlights}
+                    links={position.links}
+                  />
+                ))}
+              </CvGroup>
+            ))}
+          </Section>
+        )}
+
+        {sections.honors.count > 0 && (
+          <Section id="honors" title={sections.honors.label}>
+            <div class="entries">
+              {honors.map(({ year, title, organization, note }) => (
+                <CvEntry title={title} organization={organization} period={year} note={note} />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {sections.publications.count > 0 && (
+          <Section id="publications" title={sections.publications.label}>
+            {publicationGroups.map(({ title, items }) => (
+              <CvGroup title={title}>
+                <PublicationList publications={items} />
+              </CvGroup>
+            ))}
+          </Section>
+        )}
+
+        {sections.contributions.count > 0 && (
+          <Section id="contributions" title={sections.contributions.label}>
+            <ContributionList contributions={contributions} />
+          </Section>
+        )}
+
+        {sections.skills.count > 0 && (
+          <Section id="skills" title={sections.skills.label}>
+            <SkillList groups={skills} />
+          </Section>
+        )}
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    margin-top: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .layout {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .sections {
+    --publication-year-width: var(--width-date-column);
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .entries {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  /* A document to scan: its section titles are a size smaller than a page's. */
+  .sections :global(.section-heading h2) {
+    font-size: var(--text-2xl);
+  }
+
+  @media (min-width: 64rem) {
+    .layout {
+      grid-template-columns: 13rem minmax(0, 1fr);
+      gap: var(--space-8);
+    }
+
+    .aside {
+      position: sticky;
+      top: calc(var(--header-height) + var(--space-6));
+      align-self: start;
+    }
+  }
+
+  /* Plain blocks on paper: Chromium can overlap grid items that avoid page breaks. */
+  @media print {
+    .layout,
+    .sections,
+    .entries {
+      display: block;
+    }
+
+    .aside {
+      display: none;
+    }
+  }
+</style>

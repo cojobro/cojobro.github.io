@@ -1,0 +1,48 @@
+---
+/**
+ * Development aid, never built for production: each scene alone at /lab/<scene>/ on the dev
+ * server, on a screen filling the window below the header (framed in the same inset as on a
+ * research chapter's screen, outlined). Scrolling the tall track drives the scene through its
+ * stages as on the page.
+ */
+import SceneCanvas from '@/components/SceneCanvas.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SCENE_NAMES } from '@/scenes/names';
+
+export function getStaticPaths() {
+  if (import.meta.env.PROD) return [];
+  return SCENE_NAMES.map((scene) => ({ params: { scene }, props: { scene } }));
+}
+
+const { scene } = Astro.props;
+---
+
+<BaseLayout title={`Scene lab: ${scene}`}>
+  <div class="track" data-scene-track>
+    <div class="stage screen">
+      <SceneCanvas scene={scene} label={`The ${scene} scene`} scroll />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .track {
+    height: 500vh;
+  }
+
+  .stage {
+    --scene-inset: var(--scene-inset-story);
+    position: sticky;
+    top: var(--header-height);
+    height: calc(100vh - var(--header-height));
+  }
+
+  /* Where the scene frames its subject. */
+  .stage::after {
+    position: absolute;
+    inset: var(--scene-inset-story);
+    border: 1px dashed var(--color-border-strong);
+    content: '';
+    pointer-events: none;
+  }
+</style>

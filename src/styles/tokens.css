@@ -1,0 +1,233 @@
+/*
+ * Design tokens: the one place colors, type, spacing, layout and motion are defined.
+ * Components use these variables instead of literal values.
+ *
+ * The site is drawn as a measuring instrument. There are two surfaces:
+ *
+ * - the faceplate (`:root`): light enamel, black ink, one vermilion accent for marks and lamps;
+ * - the screen (`.screen`, below): black glass, where the instrument and the 3D scenes draw in
+ *   light. Anything inside a `.screen` gets the dark values of the same tokens, so a component
+ *   works on either surface without knowing which one it is on.
+ *
+ * The --color-* tokens read by 3D scenes (listed in src/scenes/core/palette.ts) must stay plain
+ * hex values, because three.js cannot parse every CSS color syntax. Tokens that scenes do not
+ * read (borders, tints, overlays) may use color-mix().
+ *
+ * Contrast (WCAG): on both surfaces --color-text, --color-text-muted, --color-accent-ink and the
+ * three meaning colors pass AA against --color-bg, --color-surface and --color-surface-raised.
+ * --color-accent itself is for marks (3:1), not for running text.
+ *
+ * Breakpoints (media queries cannot read custom properties, so they are written out): 40rem,
+ * where CV-style lists gain a date column; 48rem, tablets; 64rem, wide screens. Mobile first:
+ * use `min-width` queries at these widths.
+ */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-bg: #e6e5df;
+  --color-surface: #eeede8;
+  --color-surface-raised: #f6f5f1;
+  --color-sunken: #dbdad3; /* wells: control tracks, recessed panels */
+  --color-border: color-mix(in srgb, var(--color-text) 16%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--color-text) 42%, transparent);
+  /* Translucent page color for chrome that floats over content (the header). */
+  --color-overlay: color-mix(in srgb, var(--color-bg) 82%, transparent);
+
+  /* Text */
+  --color-text: #141412;
+  --color-text-muted: #55544e;
+
+  /* Meaning: one legend shared by the page text, the instrument and every 3D scene */
+  --color-signal: #0a6b7d; /* electrical stimulation and current */
+  --color-spike: #9a4b00; /* neural firing */
+  --color-decode: #5b3fd0; /* models, decoding and learning */
+
+  /* Faint fills of the meaning colors, for chips and hovered surfaces. */
+  --color-signal-soft: color-mix(in srgb, var(--color-signal) 12%, transparent);
+  --color-spike-soft: color-mix(in srgb, var(--color-spike) 12%, transparent);
+  --color-decode-soft: color-mix(in srgb, var(--color-decode) 12%, transparent);
+
+  /* The accent: lamps, underlines, the mark of what is live or selected. */
+  --color-accent: #e5401a;
+  --color-accent-ink: #b5300e; /* the accent, dark enough for text on the faceplate */
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 12%, transparent);
+
+  /* The screen's own colors, for the few places the faceplate draws a piece of glass itself. */
+  --screen-bg: #060808;
+  --screen-text: #eceee8;
+
+  /* Keyboard focus: one ring everywhere (global.css, and cards that move it to themselves). */
+  --focus-ring: 2px solid var(--color-accent);
+  --focus-offset: 3px;
+
+  /* Type: a serif that speaks, a grotesque that labels, a mono that reads out numbers. */
+  --font-display: 'Newsreader Variable', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-body: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --text-2xs: 0.6875rem; /* faceplate legends: kickers, dates, badges */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
+  --text-2xl: clamp(1.75rem, 1.3rem + 2vw, 2.75rem);
+  --text-3xl: clamp(2.375rem, 1.5rem + 4vw, 4.75rem);
+  --text-display: clamp(2.75rem, 1.1rem + 7.4vw, 8rem);
+
+  --leading-display: 1; /* the largest serif sizes */
+  --leading-tight: 1.12;
+  --leading-snug: 1.35;
+  --leading-normal: 1.6;
+
+  --weight-display: 380; /* serif headings */
+  --weight-medium: 500; /* buttons, the titles of list items */
+  --weight-strong: 640; /* legends, names, entry titles */
+
+  --tracking-display: -0.022em; /* large serif sizes */
+  --tracking-label: 0.09em; /* uppercase legends */
+  --stretch-label: 86%; /* legends are set a little condensed, as on a panel */
+
+  /* Space */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-9: 7rem;
+  --space-10: 10rem;
+
+  /* Layout */
+  --width-prose: 66ch;
+  --width-page: 84rem;
+  --width-date-column: 9rem; /* dates or labels beside CV-style lists */
+  --width-story: 28rem; /* the research page's text column beside its screens, on wide screens */
+  --gutter: clamp(1rem, 3.4vw, 3rem);
+  /* The sticky site header's height; sticky elements and anchor targets offset by it. */
+  --header-height: 3.25rem;
+  --z-header: 50; /* above page content and screens */
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1.125rem;
+  --radius-screen: clamp(0.875rem, 1.6vw, 1.625rem); /* the corners of a piece of glass */
+  --radius-full: 999px;
+
+  /* A raised plate: a lit top edge and a short, soft drop. */
+  --shadow-surface:
+    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
+    0 1px 2px color-mix(in srgb, var(--color-text) 8%, transparent),
+    0 1rem 2rem -1.25rem color-mix(in srgb, var(--color-text) 30%, transparent);
+  /* Glass set into the faceplate: a bezel line, a lit lower lip, and depth beneath it. */
+  --shadow-screen:
+    inset 0 0 0 1px color-mix(in srgb, white 9%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
+    0 1px 0 color-mix(in srgb, white 75%, transparent),
+    0 2.5rem 4rem -2.5rem color-mix(in srgb, var(--color-text) 55%, transparent);
+  /* Luminous edge for hovered or focused interactive surfaces on a screen. */
+  --shadow-glow: 0 0 1.5rem -0.5rem color-mix(in srgb, var(--color-accent) 60%, transparent);
+  /* Frosted glass behind --color-overlay: the header. */
+  --backdrop-overlay: blur(14px) saturate(1.2);
+
+  /* The room a research-page scene keeps clear inside its screen (`--scene-inset`). */
+  --scene-inset-story: var(--space-5);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 700ms;
+  --duration-reveal: 900ms; /* content rising into view as the page scrolls */
+}
+
+/*
+ * The screen: black glass. Inside it the same tokens take their dark values, so text, tags,
+ * buttons and the 3D scenes (which read these tokens from their own element) all draw in light.
+ */
+.screen {
+  color-scheme: dark;
+
+  --color-bg: #060808;
+  --color-surface: #0d1011;
+  --color-surface-raised: #151a1b;
+  --color-sunken: #000000;
+  --color-overlay: color-mix(in srgb, var(--color-bg) 78%, transparent);
+
+  --color-text: #eceee8;
+  --color-text-muted: #909992;
+
+  --color-signal: #5fe3f0;
+  --color-spike: #ffb14a;
+  --color-decode: #b6a0ff;
+
+  --color-accent: #ff5a2e;
+  --color-accent-ink: #ff7a55;
+
+  --shadow-surface:
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent), 0 1.5rem 3rem -2rem rgb(0 0 0 / 0.7);
+
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --header-height: 3.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-reveal: 0ms;
+  }
+}
+
+/* Paper: black on white at document sizes. Meaning colors stay for any printed figure. */
+@media print {
+  :root {
+    --text-2xs: 7.5pt;
+    --text-xs: 8pt;
+    --text-sm: 9pt;
+    --text-base: 10pt;
+    --text-lg: 11.5pt;
+    --text-xl: 13pt;
+    --text-2xl: 16pt;
+    --text-3xl: 22pt;
+    --text-display: 26pt;
+    --leading-normal: 1.45;
+    --space-5: 1.125rem;
+    --space-6: 1.5rem;
+    --space-7: 1.75rem;
+    --space-8: 2.25rem;
+    --space-9: 3rem;
+    --space-10: 3rem;
+    --width-date-column: 7rem;
+
+    --color-bg: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ffffff;
+    --color-sunken: #ffffff;
+    --color-border: #c4c4c4;
+    --color-border-strong: #8a8a8a;
+    --color-overlay: #ffffff;
+    --color-text: #000000;
+    --color-text-muted: #3b3b3b;
+    --color-accent: #000000;
+    --color-accent-ink: #000000;
+    --color-accent-soft: transparent;
+    --color-signal-soft: transparent;
+    --color-spike-soft: transparent;
+    --color-decode-soft: transparent;
+    --shadow-surface: none;
+    --shadow-screen: none;
+    --shadow-glow: none;
+  }
+}

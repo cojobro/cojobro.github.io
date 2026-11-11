@@ -1,0 +1,226 @@
+---
+/**
+ * The long version of one research entry: its header, its scene on a screen (resting on the
+ * scene's last stage), the entry in brief beside the Markdown body, related publications, and
+ * links to the neighboring entries.
+ */
+import { render } from 'astro:content';
+import Icon from '@/components/Icon.astro';
+import PublicationList from '@/components/PublicationList.astro';
+import ChapterNav from '@/components/research/ChapterNav.astro';
+import ColorLegend from '@/components/research/ColorLegend.astro';
+import SceneCanvas from '@/components/SceneCanvas.astro';
+import Section from '@/components/Section.astro';
+import Tag from '@/components/Tag.astro';
+import { researchPage } from '@/data/research';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getOrderedEntries } from '@/lib/content';
+import { publicationsByIds } from '@/lib/publications';
+
+export async function getStaticPaths() {
+  const entries = await getOrderedEntries('research');
+  return entries.map((entry, index) => ({
+    params: { id: entry.id },
+    props: { entry, previous: entries[index - 1], next: entries[index + 1] },
+  }));
+}
+
+const { entry, previous, next } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+const publications = publicationsByIds(data.publications);
+
+const statusLabels: Record<typeof data.status, string> = {
+  active: 'Current work',
+  exploratory: 'Exploratory',
+  earlier: 'Earlier work',
+};
+---
+
+<BaseLayout title={data.title} description={data.summary}>
+  <article class="entry">
+    <header class="head container">
+      <a class="back" href="/research/">
+        <Icon name="arrow-left" /> Research
+      </a>
+      <p class="kicker">
+        {data.kicker} <span class="kicker-part">{data.period}</span>
+        <span class="kicker-part">{statusLabels[data.status]}</span>
+      </p>
+      <h1>{data.title}</h1>
+      <p class="summary">{data.summary}</p>
+    </header>
+
+    {data.scene && data.sceneLabel && (
+      <div class="banner">
+        <div class="screen glass">
+          <SceneCanvas scene={data.scene} label={data.sceneLabel} />
+          <div class="key">
+            <ColorLegend legend={researchPage.legend} compact />
+          </div>
+        </div>
+      </div>
+    )}
+
+    <div class="container body">
+      <aside class="brief" aria-labelledby="brief-title">
+        <h2 id="brief-title" class="kicker">
+          In brief
+        </h2>
+        <p class="brief-text">{data.overview}</p>
+        {data.keywords.length > 0 && (
+          <ul class="keywords" aria-label="Keywords">
+            {data.keywords.map((keyword) => (
+              <li>
+                <Tag>{keyword}</Tag>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
+
+      <div class="main">
+        <div class="prose">
+          <Content />
+        </div>
+
+        {publications.length > 0 && (
+          <Section id="publications" title="Related publications">
+            <PublicationList publications={publications} />
+          </Section>
+        )}
+
+        <ChapterNav previous={previous} next={next} />
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .head {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+    padding-block: var(--space-6) var(--space-7);
+  }
+
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .back:hover {
+    color: var(--color-text);
+  }
+
+  h1 {
+    max-width: 15ch;
+    font-size: var(--text-display);
+    font-weight: 330;
+    line-height: var(--leading-display);
+    letter-spacing: -0.03em;
+  }
+
+  .summary {
+    max-width: 40ch;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    line-height: 1.32;
+  }
+
+  /* The scene on a wide piece of glass, edge to edge like the home page's instrument. */
+  .banner {
+    height: clamp(19rem, 62vh, 40rem);
+    padding-inline: clamp(0.5rem, 1.2vw, 0.875rem);
+    --scene-inset: var(--space-6);
+  }
+
+  .glass {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-screen);
+    box-shadow: var(--shadow-screen);
+  }
+
+  .key {
+    position: absolute;
+    right: var(--space-5);
+    bottom: var(--space-4);
+    left: var(--space-5);
+  }
+
+  .body {
+    display: grid;
+    gap: var(--space-7);
+    padding-top: var(--space-8);
+  }
+
+  .brief {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-text);
+  }
+
+  .brief .kicker {
+    color: var(--color-text);
+  }
+
+  .brief-text {
+    max-width: var(--width-prose);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.42;
+  }
+
+  .keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .main {
+    display: grid;
+    gap: var(--space-8);
+    min-width: 0;
+  }
+
+  /* Wide screens: the brief stays beside the text as it is read. */
+  @media (min-width: 64rem) {
+    .body {
+      grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+      gap: var(--space-9);
+    }
+
+    .brief {
+      position: sticky;
+      top: calc(var(--header-height) + var(--space-6));
+    }
+
+    .main {
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-text);
+    }
+  }
+
+  @media print {
+    .banner,
+    .back {
+      display: none;
+    }
+
+    .body {
+      padding-top: var(--space-5);
+    }
+  }
+</style>

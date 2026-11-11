@@ -1,0 +1,65 @@
+---
+/** A link that looks like a key on the faceplate, for a page's actions (e.g. "Download PDF"). */
+import Icon, { type IconName } from '@/components/Icon.astro';
+
+interface Props {
+  href: string;
+  /** `primary` for the page's main action, `secondary` (default) for the others. */
+  variant?: 'primary' | 'secondary';
+  /** Icon after the label. */
+  icon?: IconName;
+  /** Save the linked file instead of opening it. */
+  download?: boolean;
+}
+
+const { href, variant = 'secondary', icon, download = false } = Astro.props;
+---
+
+<a class:list={['button', variant]} href={href} download={download || undefined}>
+  <slot />
+  {icon && <Icon name={icon} />}
+</a>
+
+<style>
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-5);
+    border: 1px solid var(--color-text);
+    border-radius: var(--radius-full);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-snug);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  .button:hover {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .primary {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  .primary:hover {
+    border-color: var(--color-accent-ink);
+    background: var(--color-accent-ink);
+    color: #ffffff;
+  }
+
+  @media print {
+    .button {
+      display: none;
+    }
+  }
+</style>

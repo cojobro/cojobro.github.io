@@ -1,0 +1,203 @@
+---
+/**
+ * One entry of the CV (a degree, a position, an honor): its dates in a side column, then the
+ * title, where it was, an optional note, a list of details and supporting links.
+ */
+import Icon from '@/components/Icon.astro';
+import type { Link } from '@/data/types';
+
+interface Props {
+  title: string;
+  /** Institution or organization. */
+  organization: string;
+  /** Lab or group within the organization. */
+  group?: string;
+  /** Link for the group, or for the organization when there is no group. */
+  url?: string;
+  location?: string;
+  /** As displayed, e.g. "2023 – 2025"; the column stays empty without one. */
+  period?: string;
+  /** A sentence of context under the title block. */
+  note?: string;
+  /** Details or highlights, one line each. */
+  items?: string[];
+  links?: Link[];
+  /** Heading level of the title: 3 directly under a section, 4 inside a group. */
+  level?: 3 | 4;
+}
+
+const {
+  title,
+  organization,
+  group,
+  url,
+  location,
+  period,
+  note,
+  items = [],
+  links = [],
+  level = 3,
+} = Astro.props;
+const Heading = `h${level}` as const;
+const isExternal = (href: string) => /^https?:\/\//.test(href);
+---
+
+<article class="entry">
+  {period && <p class="period readout">{period}</p>}
+  <div class="body">
+    <Heading class="title">{title}</Heading>
+    <p class="where">
+      {group ? (
+        <>
+          <span>{organization}</span>
+          <span class="separator" aria-hidden="true">
+            ·
+          </span>
+          {url ? <a href={url}>{group}</a> : <span>{group}</span>}
+        </>
+      ) : url ? (
+        <a href={url}>{organization}</a>
+      ) : (
+        <span>{organization}</span>
+      )}
+      {location && (
+        <>
+          <span class="separator" aria-hidden="true">
+            ·
+          </span>
+          <span class="location">{location}</span>
+        </>
+      )}
+    </p>
+    {note && <p class="note">{note}</p>}
+    {items.length > 0 && (
+      <ul class="items">
+        {items.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    )}
+    {links.length > 0 && (
+      <ul class="links">
+        {links.map(({ label, href }) => (
+          <li>
+            <a href={href}>
+              {label}
+              <span class="link-icon">
+                <Icon name={isExternal(href) ? 'arrow-up-right' : 'document'} />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</article>
+
+<style>
+  .entry {
+    display: grid;
+    gap: var(--space-2);
+    break-inside: avoid;
+  }
+
+  .body {
+    display: grid;
+    gap: var(--space-2);
+    max-width: var(--width-prose);
+  }
+
+  .period {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .title {
+    font-size: var(--text-xl);
+    line-height: var(--leading-tight);
+  }
+
+  h4.title {
+    font-size: var(--text-lg);
+    letter-spacing: -0.01em;
+  }
+
+  .where {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .separator {
+    margin-inline: 0.4em;
+  }
+
+  .note {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .items {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A short dash marker, quieter than a bullet. */
+  .items li {
+    display: grid;
+    grid-template-columns: var(--space-5) minmax(0, 1fr);
+  }
+
+  .items li::before {
+    color: var(--color-text-muted);
+    content: '–';
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-1);
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .link-icon {
+    display: inline-flex;
+  }
+
+  @media (min-width: 40rem), print {
+    .entry {
+      grid-template-columns: var(--width-date-column) minmax(0, 1fr);
+      gap: var(--space-5);
+    }
+
+    .period {
+      padding-top: 0.5em;
+    }
+
+    /* The text keeps its column when an entry has no dates. */
+    .body {
+      grid-column: 2;
+    }
+  }
+
+  @media print {
+    .entry {
+      margin-bottom: var(--space-5);
+    }
+
+    .link-icon {
+      display: none;
+    }
+  }
+</style>
